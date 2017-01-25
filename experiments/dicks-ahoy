@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+ <! -- https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Create_the_Canvas_and_draw_on_it -->
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Dicks Ahoy!</title>
+    <style>
+    	* { padding: 0; margin: 0; }
+    	canvas { background: #fce; display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+<p id="dbg"></p>
+
+<canvas id="mCanvas" width="480" height="320"></canvas>
+
+<script>
+	//! path must be opened and closed for each element
+	var canvas = document.getElementById("mCanvas");
+	var ctx = canvas.getContext("2d");
+
+	// "PHALLUS" PARAMS
+	var x = canvas.width/2;
+	var y = canvas.height/2;
+	var dx = 2;
+	var dy = 2;
+	var colour = 0;
+
+	// CONSTANTS
+	var SHAFT_WIDTH = 40;
+	var SHAFT_HEIGHT = 160;
+	var BALL_RADIUS = 40;
+	var TIP_RADIUS = 30;
+	var DETAIL_WIDTH = 4;
+	var DETAIL_HEIGHT = 15;
+	var COLOUR_MAGIC_NUM = Math.pow(2,23);
+	var COLOUR_ROC = 0;
+
+	function update()
+	{
+		calcDelta();
+		draw();
+
+		document.getElementById("dbg").innerHTML = x.toString() + " " + y.toString() + " " + colour.toString(16);
+	} setInterval(update, 30);
+
+	// this function performs changes for colour and position
+	function calcDelta()
+	{
+		x += dx;
+		x %= canvas.width;
+		y += dy;
+		y %= canvas.height;
+		COLOUR_ROC = (colour << 1 > 20) ? (colour << 1) : 20;
+		colour += COLOUR_ROC/4;
+		colour %= COLOUR_MAGIC_NUM; // 2^23
+		colour = ((colour >> 23 ) == 1) ? colour : (~colour)&0xffffff
+	}
+
+	function draw()
+	{		
+		// clear canvas
+		ctx.clearRect(0,0, canvas.width, canvas.height);
+		// shaft
+		ctx.beginPath();
+		ctx.rect(x-SHAFT_WIDTH/2, y-SHAFT_HEIGHT/2, SHAFT_WIDTH, SHAFT_HEIGHT);
+		ctx.fillStyle = "#" + colour.toString(16);
+		ctx.fill();
+
+		// left nut
+		ctx.beginPath();
+		ctx.arc(x-BALL_RADIUS/2, y+SHAFT_HEIGHT/2, BALL_RADIUS, 0, Math.PI*2, false);
+		ctx.fillStyle = "#" + colour.toString(16);
+		ctx.fill();
+		ctx.closePath();
+
+		// right nut
+		ctx.beginPath();
+		ctx.arc(x+BALL_RADIUS/2, y+SHAFT_HEIGHT/2, BALL_RADIUS, 0, Math.PI*2, false);
+		ctx.fillStyle = "#" + colour.toString(16);
+		ctx.fill();
+		ctx.closePath();
+
+		// just the tip
+		ctx.beginPath();
+		ctx.arc(x, y-SHAFT_HEIGHT/2, TIP_RADIUS, 0, Math.PI*2, false);
+		ctx.fillStyle = "#" + colour.toString(16);
+		ctx.fill();
+		ctx.closePath();
+
+		// stroke the tip
+		ctx.beginPath();
+		ctx.rect(x-DETAIL_WIDTH/2, y-SHAFT_HEIGHT/2-TIP_RADIUS+DETAIL_WIDTH/4, DETAIL_WIDTH, DETAIL_HEIGHT);
+		ctx.strokeStyle = "rgba(0, 255, 25, 0.8)";
+		// ctx.strokeStyle = (~colour)&0xffffff;
+		ctx.stroke();
+		ctx.closePath();
+
+	} 
+</script>
+
+
+</body>
+</html>
