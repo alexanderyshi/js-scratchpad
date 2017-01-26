@@ -4,8 +4,8 @@ function Ship(id, colour, style) {
 	this.style = style;
 
 	this.bearing = 0;
-	this.pos_x = 0;
-	this.pos_y = 0;
+	this.pos_x = 0.0;
+	this.pos_y = 0.0;
 	this.vel_x = 0;
 	this.vel_y = 0;
 	this.ACCEL_RATE = 5;
@@ -63,7 +63,7 @@ function calculateShipDelta(ship) {
 }
 
 function detectShipCollision(ship1,ship2) {
-	return Math.sqrt(Math.pow(2,ship1.pos_x-ship2.pos_x) + Math.pow(ship1.pos_y-ship2.pos_y,2)) < ship1.SHIP_RADIUS + ship2.SHIP_RADIUS ? 1 : 0;
+	return Math.sqrt(Math.pow(ship1.pos_x-ship2.pos_x,2) + Math.pow(ship1.pos_y-ship2.pos_y,2)) < ship1.SHIP_RADIUS + ship2.SHIP_RADIUS ? 1 : 0;
 }
 
 function randomizePosition(ship) {
