@@ -50,9 +50,11 @@
 	function calcDelta()
 	{
 		x += dx;
-		x %= canvas.width;
+		x %= canvas.width/3;
+		x += canvas.width/6;
 		y += dy;
-		y %= canvas.height;
+		y %= canvas.height/3;
+		y += canvas.height/6;
 		COLOUR_ROC = (colour << 1 > 20) ? (colour << 1) : 20;
 		colour += COLOUR_ROC/4;
 		colour %= COLOUR_MAGIC_NUM; // 2^23
