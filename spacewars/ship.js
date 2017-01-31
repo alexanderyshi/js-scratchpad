@@ -1,4 +1,5 @@
 var SHIP_RADIUS = 20;
+var SHOOT_COOLDOWN = 500; // ms
 
 function Ship(id, colour, style) {
 	baseType.call(this);
@@ -19,27 +20,22 @@ function Ship(id, colour, style) {
 
 	// TODO: preassign a number of bullets and search for a non-active one in the shoot() function
 	this.bulletContainer = {};
-	this.cannon_ready = true;
+	var cannon_ready = true;
 	this.shoot = function()
 	{
-		console.log('pew', this.cannon_ready);
-		if (this.cannon_ready === true)
+		console.log('pew', cannon_ready);
+		if (cannon_ready === true)
 		{
-			this.cannon_ready = false;
+			cannon_ready = false;
 			this.bulletContainer[0] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing);
 			// ! adding paranthesis causes the return value to be scheduled instead of the function call (resulting in immediate call), therefore use anon func
-			
-			// setTimeout(function() {readyCannon(this)}, 3000);
-			
-			// setTimeout(readyCannon(this), 3000);
-
 			setTimeout(
 				function() 
 					{	
-						this.cannon_ready = true;		
-						console.log('GUN READY', this.cnt);
+						cannon_ready = true;		
+						console.log('GUN READY');
 						this.cnt++;
-					}, 2000);
+					}, SHOOT_COOLDOWN);
 		}
 
 	};
