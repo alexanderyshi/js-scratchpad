@@ -1,5 +1,6 @@
 var SHIP_RADIUS = 20;
-var SHOOT_COOLDOWN = 500; // ms
+var SHOOT_COOLDOWN = 250; // ms
+var BULLETS_PER_SHIP = 5;
 
 function Ship(id, colour, style) {
 	baseType.call(this);
@@ -19,43 +20,52 @@ function Ship(id, colour, style) {
 	this.downPressed = false;
 
 	// TODO: preassign a number of bullets and search for a non-active one in the shoot() function
-	this.bulletContainer = {};
+	// TODO: turn the following into a "gun" type object/var? - can then be applied to other types of ships, enemies
+	this.bulletContainer = [];
+	// TODO: make a set of functions for preset Bullet configs?
+	for (i = 0; i < BULLETS_PER_SHIP; i++) 
+	{ 
+		this.bulletContainer[i] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing, false);
+	}
 	var cannon_ready = true;
 	this.shoot = function()
 	{
-		console.log('pew', cannon_ready);
 		if (cannon_ready === true)
 		{
-			cannon_ready = false;
-			this.bulletContainer[0] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing);
-			// ! adding paranthesis causes the return value to be scheduled instead of the function call (resulting in immediate call), therefore use anon func
-			setTimeout(
-				function() 
-					{	
-						cannon_ready = true;		
-						console.log('GUN READY');
-						this.cnt++;
-					}, SHOOT_COOLDOWN);
+			var bulletNum = -1;
+			for (i = 0; i < 5; i++) { 
+				if (this.bulletContainer[i].active === false)
+				{
+					bulletNum = i;
+					break;
+				}
+			}
+			if (bulletNum === -1) { console.log('no bullets'); }
+			else
+			{
+				cannon_ready = false;
+				this.bulletContainer[bulletNum] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing, true);
+				// ! adding paranthesis causes the return value to be scheduled instead of the function call (resulting in immediate call), therefore use anon func
+				setTimeout(
+					function() 
+						{	
+							cannon_ready = true;		
+							this.cnt++;
+						}, SHOOT_COOLDOWN);
+			}
 		}
 
 	};
 }
-
-// function readyCannon(ship)
-// {
-// 	ship.cannon_ready = true;
-// 		console.log('GUN READY', ship.cnt);
-// 		ship.cnt++;
-// }
 
 Ship.prototype = Object.create(baseType.prototype);
 Ship.prototype.constructor = Ship;
 
 Ship.prototype.draw = function() {
 	baseType.prototype.draw.call();
-	if (this.bulletContainer[0])
-	{
-		this.bulletContainer[0].draw();
+	var i;
+	for (i = 0; i < BULLETS_PER_SHIP; i++) { 
+		this.bulletContainer[i].draw();
 	}
 
 	// draw ship
@@ -96,9 +106,8 @@ Ship.prototype.calcDelta = function() {
 	handleUserInput(this);
 	// Object.getPrototypeOf(Ship.prototype).calcDelta(this); // ! this looks it does a call on a new, seperate instance
 	// call on the super
-	if  (this.bulletContainer[0])
-	{
-		this.bulletContainer[0].calcDelta();
+	for (i = 0; i < BULLETS_PER_SHIP; i++) { 
+		this.bulletContainer[i].calcDelta();
 	}
 }
 

@@ -1,7 +1,7 @@
 var BULLET_RADIUS = 4;
 var BULLET_SPEED = 15;
 
-function Bullet(id, colour, style, pos_x, pos_y, bearing) {
+function Bullet(id, colour, style, pos_x, pos_y, bearing, active) {
 	baseType.call(this);
 	// bullets get the same id as the shooter to verify ownership
 	this.id = id;
@@ -9,7 +9,7 @@ function Bullet(id, colour, style, pos_x, pos_y, bearing) {
 	this.style = style;
 
 	this.persistOnEdge = false;
-
+	this.active = active;
 	this.bearing = bearing;
 	this.pos_x = pos_x;
 	this.pos_y = pos_y;
