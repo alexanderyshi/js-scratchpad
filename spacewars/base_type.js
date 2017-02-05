@@ -2,6 +2,8 @@
 // ! INHERITANCE BASICS: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/create
 // ! INHERITING METHODS http://stackoverflow.com/questions/7785955/inherit-parent-constructor-arguments
 // ! CALLING ON SUPER http://www.salsify.com/blog/engineering/super-methods-in-javascript
+// ! IN DEPTH INHERITANCE https://developer.mozilla.org/en/docs/Web/JavaScript/Inheritance_and_the_prototype_chain
+// ! SCOPE IN JS https://toddmotto.com/everything-you-wanted-to-know-about-javascript-scope/
 
 // TODO: are the (this.active === false) checks reasonable to implement for child class ease of use?
 

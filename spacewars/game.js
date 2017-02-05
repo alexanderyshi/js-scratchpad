@@ -1,3 +1,10 @@
+// UI constants
+var UI_PADDING = 10;
+
+// pause variables
+var paused = false;
+var pause_button_lifted = true;
+
 // event listeners and flags
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
@@ -6,6 +13,8 @@ document.addEventListener("keyup", keyUpHandler, false);
 var ships = []
 ships[0] = new Ship(0, 'rgba(220,60,60,0.5)', 0);
 ships[1] = new Ship(1, 'rgba(60,60,220,0.5)', 0);
+ships[0].randomizePosition();
+ships[1].randomizePosition();
 
 function keyDownHandler(e) {
     if(e.keyCode == 39) {
@@ -31,6 +40,13 @@ function keyDownHandler(e) {
     }
     else if(e.keyCode == 87) {
         ships[1].upPressed = true;
+    }
+    else if(e.keyCode == 80) {
+        if (pause_button_lifted)
+        {
+            paused = !paused;
+            pause_button_lifted = false;
+        }
     }
 }
 
@@ -59,6 +75,9 @@ function keyUpHandler(e) {
     else if(e.keyCode == 87) {
         ships[1].upPressed = false;
     }
+    else if(e.keyCode == 80) {
+        pause_button_lifted = true;
+    }
 }
 
 function drawAll() {
@@ -67,11 +86,18 @@ function drawAll() {
   	ctx.canvas.height = window.innerHeight;
   	// clear canvas
 	ctx.clearRect(0,0, canvas.width, canvas.height);
+    // draw ships and their spawned bullets
     var i;
     for (i = 0; i < ships.length; i++)
     {
         ships[i].draw();    
     }
+    // draw scores from ships
+    var ui_string = 'Player 1: ' + ships[0].points.toString() + ' Player 2: ' + ships[1].points.toString();
+    ctx.font = '14px sans-serif';
+    ctx.textBaseline = 'hanging';
+    var text_measurement = ctx.measureText(ui_string);
+    ctx.strokeText(ui_string, canvas.width - text_measurement.width - UI_PADDING, UI_PADDING);
 } 
 
 function detectCollisions() 
@@ -90,7 +116,7 @@ function detectCollisions()
                 {
                     if (ships[j].detectCollision(ships[i].bulletContainer[k]))
                     {
-                        document.getElementById("hud").innerHTML = "Player " + (j+1).toString() + " loses!";
+                        // document.getElementById("hud").innerHTML = "Player " + (j+1).toString() + " loses!";
                         ships[j].randomizePosition();
                         ships[i].bulletContainer[k].active = false;
                         ships[i].points++;
@@ -121,31 +147,6 @@ function detectCollisions()
             }
         }
     }
-
-    // if (ships[0].detectCollision(ships[1]))
-    // {
-    //     ships[0].randomizePosition();
-    //     ships[1].randomizePosition();
-    // }
-    // // TODO: change collision to be based on bullet collision handlers
-    // if (ships[0].bulletContainer[0] && ships[0].bulletContainer[0].active === true)
-    // {
-    //     if (ships[1].detectCollision(ships[0].bulletContainer[0]))
-    //     {
-    //         document.getElementById("p1_hud").innerHTML = "Player 1 wins!";
-    //         ships[1].randomizePosition();
-    //         ships[0].bulletContainer[0].active = false;
-    //     }
-    // }
-    // if (ships[1].bulletContainer[0] && ships[1].bulletContainer[0].active === true)
-    // {
-    //     if (ships[0].detectCollision(ships[1].bulletContainer[0]))
-    //     {
-    //         document.getElementById("p2_hud").innerHTML = "Player 2 wins!";
-    //         ships[0].randomizePosition();
-    //         ships[1].bulletContainer[0].active = false;
-    //     }   
-    // }
 }
 
 function calcDeltas()
@@ -157,8 +158,25 @@ function calcDeltas()
     }
 }
 
+function pauseHandler()
+{
+    drawAll();
+    var ui_string = 'PAUSED';
+    ctx.font = '140px sans-serif';
+    ctx.textBaseline = 'hanging';
+    var text_measurement = ctx.measureText(ui_string);
+    ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2 - 140/2);
+}
+
 function update() {
-    calcDeltas();
-    detectCollisions();
-	drawAll();
+    if (paused)
+    {
+        pauseHandler();
+    }
+    else 
+    {
+        calcDeltas();
+        detectCollisions();
+        drawAll();
+    }
 } setInterval(update, 33);
