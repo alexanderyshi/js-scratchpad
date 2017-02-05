@@ -9,7 +9,6 @@ var pause_button_lifted = true;
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
-//TODO: stick these into an array
 var ships = []
 ships[0] = new Ship(0, 'rgba(220,60,60,0.5)', 0);
 ships[1] = new Ship(1, 'rgba(60,60,220,0.5)', 0);
@@ -120,7 +119,6 @@ function detectCollisions()
                         ships[j].randomizePosition();
                         ships[i].bulletContainer[k].active = false;
                         ships[i].points++;
-                        ships[j].points--;
                     }
                 }
 
@@ -133,7 +131,6 @@ function detectCollisions()
                         ships[i].randomizePosition();
                         ships[j].bulletContainer[k].active = false;
                         ships[j].points++;
-                        ships[i].points--;
                     }
                 }
             }
@@ -142,6 +139,7 @@ function detectCollisions()
             {
                 ships[i].randomizePosition();
                 ships[j].randomizePosition();
+                // if you're trying to prevent the opponent from finishing, this mechanic brings #points down
                 ships[i].points--;
                 ships[j].points--;
             }
@@ -168,8 +166,24 @@ function pauseHandler()
     ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2 - 140/2);
 }
 
+function victoryHandler()
+{
+    drawAll();
+    var ui_string = 'VICTORY';
+    ctx.font = '140px sans-serif';
+    ctx.textBaseline = 'hanging';
+    var text_measurement = ctx.measureText(ui_string);
+    ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2 - 140/2);
+}
+
 function update() {
-    if (paused)
+    drawAll();
+    // TODO: move check to detectCollisions to prevent wasteful checks
+    if (ships[0].points >= 10 || ships[1].points >= 10)
+    {
+        victoryHandler();
+    }
+    else if (paused)
     {
         pauseHandler();
     }
@@ -177,6 +191,5 @@ function update() {
     {
         calcDeltas();
         detectCollisions();
-        drawAll();
     }
 } setInterval(update, 33);
