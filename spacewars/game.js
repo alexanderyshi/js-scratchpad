@@ -7,6 +7,7 @@ var pause_button_lifted = true;
 var pause_overlay_colour = "rgba(200,200,200,0.3)";
 
 // game variables
+var BLACK_HOLE_ENABLED = true;
 var WINNING_POINTS = 10;
 
 // event listeners and flags
@@ -44,8 +45,15 @@ function keyDownHandler(e) {
     else if(e.keyCode == 87) {
         ships[1].upPressed = true;
     }
-    else if(e.keyCode == 80) {
+    else if(e.keyCode == 80) { // p
         if (pause_button_lifted)
+        {
+            paused = !paused;
+            pause_button_lifted = false;
+        }
+    }
+    else if(e.keyCode == 32) { // space
+        if (pause_button_lifted && paused)
         {
             paused = !paused;
             pause_button_lifted = false;
@@ -78,7 +86,7 @@ function keyUpHandler(e) {
     else if(e.keyCode == 87) {
         ships[1].upPressed = false;
     }
-    else if(e.keyCode == 80) {
+    else if(e.keyCode == 80) { //p
         pause_button_lifted = true;
     }
 }
@@ -207,6 +215,5 @@ function update() {
     {
         calcDeltas();
         detectCollisions();
-        ships[0].points = WINNING_POINTS;
     }
 } setInterval(update, 33);
