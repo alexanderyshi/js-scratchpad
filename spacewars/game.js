@@ -4,6 +4,10 @@ var UI_PADDING = 10;
 // pause variables
 var paused = false;
 var pause_button_lifted = true;
+var pause_overlay_colour = "rgba(200,200,200,0.3)";
+
+// game variables
+var WINNING_POINTS = 10;
 
 // event listeners and flags
 document.addEventListener("keydown", keyDownHandler, false);
@@ -159,6 +163,12 @@ function calcDeltas()
 function pauseHandler()
 {
     drawAll();
+    // draw overlay base layer
+    ctx.beginPath();
+    ctx.rect(UI_PADDING, UI_PADDING, canvas.width - UI_PADDING * 2, canvas.height - UI_PADDING * 2);
+    ctx.fillStyle = pause_overlay_colour;
+    ctx.fill();
+    // draw paused screen
     var ui_string = 'PAUSED';
     ctx.font = '140px sans-serif';
     ctx.textBaseline = 'hanging';
@@ -169,6 +179,12 @@ function pauseHandler()
 function victoryHandler()
 {
     drawAll();
+    // draw overlay base layer
+    ctx.beginPath();
+    ctx.rect(UI_PADDING, UI_PADDING, canvas.width - UI_PADDING * 2, canvas.height - UI_PADDING * 2);
+    ctx.fillStyle = pause_overlay_colour;
+    ctx.fill();
+    // draw overlay text
     var ui_string = 'VICTORY';
     ctx.font = '140px sans-serif';
     ctx.textBaseline = 'hanging';
@@ -179,7 +195,7 @@ function victoryHandler()
 function update() {
     drawAll();
     // TODO: move check to detectCollisions to prevent wasteful checks
-    if (ships[0].points >= 10 || ships[1].points >= 10)
+    if (ships[0].points >= WINNING_POINTS || ships[1].points >= WINNING_POINTS)
     {
         victoryHandler();
     }
@@ -191,5 +207,6 @@ function update() {
     {
         calcDeltas();
         detectCollisions();
+        ships[0].points = WINNING_POINTS;
     }
 } setInterval(update, 33);
