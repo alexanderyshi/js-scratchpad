@@ -1,5 +1,5 @@
 var BULLET_RADIUS = 4;
-var BULLET_SPEED = 15;
+var BULLET_SPEED = 7;
 
 function Bullet(id, colour, style, pos_x, pos_y, bearing, active) {
 	baseType.call(this);
@@ -15,7 +15,6 @@ function Bullet(id, colour, style, pos_x, pos_y, bearing, active) {
 	this.pos_y = pos_y;
 	this.vel_x = BULLET_SPEED * Math.cos(degToRad(this.bearing));
 	this.vel_y = BULLET_SPEED * Math.sin(degToRad(this.bearing));
-	this.radius = BULLET_RADIUS;
 	this.DAMPING_FACTOR = 1;
 
 	// this is not mathematically correct but w/e

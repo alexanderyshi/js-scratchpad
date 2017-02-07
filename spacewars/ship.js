@@ -1,6 +1,8 @@
-var SHIP_RADIUS = 20;
+var SHIP_RADIUS = 10;
 var SHOOT_COOLDOWN = 250; // ms
 var BULLETS_PER_SHIP = 5;
+var SHIP_CANNON_LENGTH = 10;
+var SHIP_ACCEL_RATE = 2;
 
 function Ship(id, colour, style) {
 	baseType.call(this);
@@ -10,9 +12,9 @@ function Ship(id, colour, style) {
 
 	this.points = 0;
 
-	this.ACCEL_RATE = 5;
+	this.ACCEL_RATE = SHIP_ACCEL_RATE;
 	this.radius = SHIP_RADIUS;
-	this.CANNON_LENGTH = 30;
+	this.CANNON_LENGTH = SHIP_CANNON_LENGTH;
 
 	this.rightPressed = false;
 	this.upPressed = false;
@@ -40,7 +42,7 @@ function Ship(id, colour, style) {
 					break;
 				}
 			}
-			if (bulletNum === -1) { console.log('no bullets'); }
+			if (bulletNum === -1) {/* no bullets */}
 			else
 			{
 				cannon_ready = false;

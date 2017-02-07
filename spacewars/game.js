@@ -8,17 +8,22 @@ var pause_overlay_colour = "rgba(200,200,200,0.3)";
 
 // game variables
 var BLACK_HOLE_ENABLED = true;
-var WINNING_POINTS = 10;
+var WINNING_POINTS = 5;
 
 // event listeners and flags
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
+// game entities
 var ships = []
 ships[0] = new Ship(0, 'rgba(220,60,60,0.5)', 0);
 ships[1] = new Ship(1, 'rgba(60,60,220,0.5)', 0);
 ships[0].randomizePosition();
 ships[1].randomizePosition();
+if (BLACK_HOLE_ENABLED === true)
+{
+   var blackHole = new BlackHole(2, "rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, true); 
+}
 
 function keyDownHandler(e) {
     if(e.keyCode == 39) {
@@ -109,6 +114,11 @@ function drawAll() {
     ctx.textBaseline = 'hanging';
     var text_measurement = ctx.measureText(ui_string);
     ctx.strokeText(ui_string, canvas.width - text_measurement.width - UI_PADDING, UI_PADDING);
+    // draw BlackHole
+    if (BLACK_HOLE_ENABLED === true)
+    {
+        blackHole.draw();
+    }
 } 
 
 function detectCollisions() 
@@ -157,6 +167,15 @@ function detectCollisions()
             }
         }
     }
+    // blackhole
+    if (ships[0].detectCollision(blackHole))
+    {
+        ships[0].randomizePosition();
+    }
+    if (ships[1].detectCollision(blackHole))
+    {
+        ships[1].randomizePosition();
+    }
 }
 
 function calcDeltas()
@@ -165,6 +184,14 @@ function calcDeltas()
     for (i = 0; i < ships.length; i++)
     {
         ships[i].calcDelta();    
+    }
+    if (BLACK_HOLE_ENABLED === true)
+    {
+        blackHole.calcDelta();
+        //gravitate
+        ships[0].gravitate(blackHole);
+        ships[1].gravitate(blackHole);
+        // TODO: gravitation for bullets
     }
 }
 
@@ -215,5 +242,6 @@ function update() {
     {
         calcDeltas();
         detectCollisions();
+        calcBearing(ships[0],blackHole);
     }
 } setInterval(update, 33);

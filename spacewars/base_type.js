@@ -34,9 +34,9 @@ baseType.prototype.calcDelta = function() {
 	// 	return;
 	// }
 	this.vel_x *= this.DAMPING_FACTOR;
-	this.vel_x = (Math.abs(this.vel_x) > 0.5) ? this.vel_x : 0;
+	// this.vel_x = (Math.abs(this.vel_x) > 0.1) ? this.vel_x : 0;
 	this.vel_y *= this.DAMPING_FACTOR;
-	this.vel_y = (Math.abs(this.vel_y) > 0.5) ? this.vel_y : 0;
+	// this.vel_y = (Math.abs(this.vel_y) > 0.1) ? this.vel_y : 0;
 
 	this.pos_x += this.vel_x;
 	this.pos_y += this.vel_y;
@@ -60,7 +60,6 @@ baseType.prototype.calcDelta = function() {
 		if (this.pos_x < 0 || this.pos_x > ctx.canvas.width || this.pos_y > ctx.canvas.height || this.pos_y < 0) 
 		{
 			this.active = false;
-			console.log('an object went inactive')
 		}
 	}
 }
@@ -72,8 +71,7 @@ baseType.prototype.detectCollision = function(obj) {
 	// {
 	// 	return;
 	// }
-	return Math.sqrt(Math.pow(this.pos_x - obj.pos_x,2) 	
-		+ Math.pow(this.pos_y - obj.pos_y,2)) < this.radius + obj.radius ? 1 : 0;
+	return calcDistance(obj,this) < this.radius + obj.radius ? 1 : 0;
 }
 
 baseType.prototype.randomizePosition = function() {
@@ -83,4 +81,14 @@ baseType.prototype.randomizePosition = function() {
 	// }
 	this.pos_x = ctx.canvas.width * Math.random();
 	this.pos_y = ctx.canvas.height * Math.random();
+	this.vel_x = 0;
+	this.vel_y = 0;
+}
+
+baseType.prototype.gravitate = function(blackHole) {
+	var bearing = calcBearing(this, blackHole);
+	var distance = calcDistance(this, blackHole);
+	var accel = blackHole.gravitation_constant / Math.pow(distance,2);
+	this.vel_x += Math.cos(bearing) * accel; 
+	this.vel_y += Math.sin(bearing) * accel; 
 }
