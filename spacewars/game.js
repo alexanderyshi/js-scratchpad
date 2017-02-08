@@ -149,7 +149,6 @@ function detectCollisions()
                 {
                     if (ships[i].detectCollision(ships[j].bulletContainer[k]))
                     {
-                        document.getElementById("hud").innerHTML = "Player " + (i+1).toString() + " loses!";
                         ships[i].randomizePosition();
                         ships[j].bulletContainer[k].active = false;
                         ships[j].points++;
@@ -161,7 +160,6 @@ function detectCollisions()
             {
                 ships[i].randomizePosition();
                 ships[j].randomizePosition();
-                // if you're trying to prevent the opponent from finishing, this mechanic brings #points down
                 ships[i].points--;
                 ships[j].points--;
             }
