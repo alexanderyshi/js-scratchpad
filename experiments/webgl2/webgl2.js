@@ -9,18 +9,23 @@
 	with a focus on using the WebGL API and without scope on how the underlying OpenGL works
 */
 
-var gl; // global
-var horizAspect = 1.0; // usually width/height
-var squareRotation = 0.0;
-var squareXOffset = 0.0;
-var squareYOffset = 0.0;
-var squareZOffset = 0.0;
+var gl; // global gl context var
+var horizAspect = 1000.0/1000.0; // usually width/height
+var cubeRotation = 0.0;
+var mXOffset = 0.0;
+var mYOffset = 0.0;
+var mZOffset = 0.0;
 var xIncValue = 0.2;
 var yIncValue = -0.4;
 var zIncValue = 0.3;
 var tick = 0;
+var cubeVerticesBuffer;
+var cubeVerticesColorBuffer;
+var cubeVerticesIndexBuffer;
+var colors;
+var generatedColors;
 
-var lastSquareUpdateTime;
+var lastCubeUpdateTime;
 
 function start() {
 	// makes sense to not need this to be global - does it get GC?
@@ -149,31 +154,94 @@ function getShader(gl, id, type) {
 
 function initBuffers() {
 	// create buffer storage object 
-	squareVerticesBuffer = gl.createBuffer();
+	cubeVerticesBuffer = gl.createBuffer();
 	// bind created buffer object in GL framework
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
 	// coords (x,y,z) -> since z is constant 0, we have a 2d element
-  	var vertices = [
-		 1,   1,  0,
-		 -1,   1,  0,
-		1,   -1,  0,
-		-1,   -1,  0
+	var vertices = [
+		// Front face
+		-1.0, -1.0,  1.0,
+		1.0, -1.0,  1.0,
+		1.0,  1.0,  1.0,
+		-1.0,  1.0,  1.0,
+
+		// Back face
+		-1.0, -1.0, -1.0,
+		-1.0,  1.0, -1.0,
+		1.0,  1.0, -1.0,
+		1.0, -1.0, -1.0,
+
+		// Top face
+		-1.0,  1.0, -1.0,
+		-1.0,  1.0,  1.0,
+		1.0,  1.0,  1.0,
+		1.0,  1.0, -1.0,
+
+		// Bottom face
+		-1.0, -1.0, -1.0,
+		1.0, -1.0, -1.0,
+		1.0, -1.0,  1.0,
+		-1.0, -1.0,  1.0,
+
+		// Right face
+		1.0, -1.0, -1.0,
+		1.0,  1.0, -1.0,
+		1.0,  1.0,  1.0,
+		1.0, -1.0,  1.0,
+
+		// Left face
+		-1.0, -1.0, -1.0,
+		-1.0, -1.0,  1.0,
+		-1.0,  1.0,  1.0,
+		-1.0,  1.0, -1.0
 	];
+
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+	updateColors();
+
+	cubeVerticesColorBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
 	
-  	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-	
-	// these are 4 attribute arrays
+	cubeVerticesIndexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
+	// sets of triangles that possess the values of the corresponding index of cubeVerticesBuffer
+	var cubeVertexIndices = [
+		0,  1,  2,      0,  2,  3,    // front
+		4,  5,  6,      4,  6,  7,    // back
+		8,  9,  10,     8,  10, 11,   // top
+		12, 13, 14,     12, 14, 15,   // bottom
+		16, 17, 18,     16, 18, 19,   // right
+		20, 21, 22,     20, 22, 23    // left
+	];
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+    	new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+}
+
+function updateColors()
+{
 	var valA = Math.pow(Math.cos(tick/90),4);
 	var valB = Math.pow(Math.sin(tick/90),4);
-	var colors = [
-    	valB, valA, valA, 1,    	// blue-green
-    	valA,  valB,  valB,  1,    // red
-    	valB,  valA,  valB,  1,    // green
-    	valB,  valB,  valA,  1     // blue
- 	];
-  	squareVerticesColorBuffer = gl.createBuffer();
-  	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
-  	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+	// these are 4 attribute arrays
+	colors = [
+		[valA/valB,  valB/valA,  (valA+valB)/2,  1],    // Front face: wildcard
+		[valA,  valB,  valB,  1],    // Back face: red
+		[valB,  valA,  valB,  1],    // Top face: green
+		[valB,  valB,  valA,  1],    // Bottom face: blue
+		[valA,  valA,  valB,  1],    // Right face: yellow
+		[valA,  valB,  valA,  1]     // Left face: purple
+	];
+
+	generatedColors = [];
+
+	for (var j = 0; j < 6; j++) {
+		var c = colors[j];
+
+		for (var i = 0; i < 4; i++) {
+			generatedColors = generatedColors.concat(c);
+		}
+	}
   	tick++;
 }
 
@@ -188,49 +256,50 @@ function drawScene() {
 
 	// done after translation
 	mvPushMatrix();
-	mvRotate(squareRotation, [1, 0, 1]);
-	mvTranslate([squareXOffset, squareYOffset, squareZOffset]);
+	mvRotate(cubeRotation, [1, 0, 1]);
+	mvTranslate([mXOffset, mYOffset, mZOffset]);
 
 	// void gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
 	// gl.vertexAttribPointer(always 0, 3 dimensions, float type storage in vertices array, fixed point values instead of normalized, no offset between vertices in storage, no offset to start storage of array);
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
 	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 
 	// repeat for colour vertices
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
     gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
 
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
 	setMatrixUniforms();
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
 
 	// restore original matrix after drawing - AYS who is using this?!?
 	mvPopMatrix();
 
 	var currentTime = Date.now();
-	if (lastSquareUpdateTime) {
-	  	var delta = currentTime - lastSquareUpdateTime;
+	if (lastCubeUpdateTime) {
+	  	var delta = currentTime - lastCubeUpdateTime;
 	  	
-		squareRotation += (30 * delta) / 1000.0;
-		squareXOffset += xIncValue * ((3 * delta) / 1000.0);
-	    squareYOffset += yIncValue * ((3 * delta) / 1000.0);
-	    squareZOffset += zIncValue * ((3 * delta) / 1000.0);
+		cubeRotation += (30 * delta) / 1000.0;
+		mXOffset += xIncValue * ((3 * delta) / 1000.0);
+	    mYOffset += yIncValue * ((3 * delta) / 1000.0);
+	    mZOffset += zIncValue * ((3 * delta) / 1000.0);
 	    
 	    var offsetBounds = 2.5;
-	    if (Math.abs(squareXOffset) > offsetBounds) {
+	    if (Math.abs(mXOffset) > offsetBounds) {
 		    xIncValue = -xIncValue;
-		    squareXOffset = squareXOffset > 0 ? offsetBounds : -offsetBounds;
+		    mXOffset = mXOffset > 0 ? offsetBounds : -offsetBounds;
 	    }
-	    if (Math.abs(squareYOffset) > offsetBounds) {
+	    if (Math.abs(mYOffset) > offsetBounds) {
 	        yIncValue = -yIncValue;
-		    squareYOffset = squareYOffset > 0 ? offsetBounds : -offsetBounds;
+		    mYOffset = mYOffset > 0 ? offsetBounds : -offsetBounds;
 	    }
-	    if (Math.abs(squareZOffset) > offsetBounds) {
+	    if (Math.abs(mZOffset) > offsetBounds) {
 	        zIncValue = -zIncValue;
-		    squareZOffset = squareZOffset > 0 ? offsetBounds : -offsetBounds;
+		    mZOffset = mZOffset > 0 ? offsetBounds : -offsetBounds;
 	    }
 	}
   	
-  	lastSquareUpdateTime = currentTime;
+  	lastCubeUpdateTime = currentTime;
   
 }
 
