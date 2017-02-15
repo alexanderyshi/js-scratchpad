@@ -18,6 +18,7 @@ var squareZOffset = 0.0;
 var xIncValue = 0.2;
 var yIncValue = -0.4;
 var zIncValue = 0.3;
+var tick = 0;
 
 var lastSquareUpdateTime;
 
@@ -63,7 +64,7 @@ function start() {
 
     // Set up to draw the scene periodically.
 
-	setInterval(drawScene, 15);
+	setInterval(drawScene, 33);
 }
 
 function initWebGL(canvas) {
@@ -162,18 +163,22 @@ function initBuffers() {
   	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 	
 	// these are 4 attribute arrays
+	var valA = Math.pow(Math.cos(tick/90),4);
+	var valB = Math.pow(Math.sin(tick/90),4);
 	var colors = [
-    	1.0,  1.0,  1.0,  1.0,    // white
-    	1.0,  0.0,  0.0,  1.0,    // red
-    	0.0,  1.0,  0.0,  1.0,    // green
-    	0.0,  0.0,  1.0,  1.0     // blue
+    	valB, valA, valA, 1,    	// blue-green
+    	valA,  valB,  valB,  1,    // red
+    	valB,  valA,  valB,  1,    // green
+    	valB,  valB,  valA,  1     // blue
  	];
   	squareVerticesColorBuffer = gl.createBuffer();
   	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
   	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+  	tick++;
 }
 
 function drawScene() {
+	initBuffers();
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	// makePerspective (FOV angle in deg, width:height, min depth, max depth)
 	perspectiveMatrix = makePerspective(45, horizAspect, 0.1, 100.0);
