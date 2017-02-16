@@ -11,21 +11,23 @@
 
 var gl; // global gl context var
 var horizAspect = 1000.0/1000.0; // usually width/height
+
 var cubeRotation = 0.0;
+var tick = 0;
+
 var mXOffset = 0.0;
 var mYOffset = 0.0;
 var mZOffset = 0.0;
 var xIncValue = 0.2;
 var yIncValue = -0.4;
 var zIncValue = 0.3;
-var tick = 0;
+var lastCubeUpdateTime;
+
+var colors;
+var generatedColors;
 var cubeVerticesBuffer;
 var cubeVerticesColorBuffer;
 var cubeVerticesIndexBuffer;
-var colors;
-var generatedColors;
-
-var lastCubeUpdateTime;
 
 function start() {
 	// makes sense to not need this to be global - does it get GC?
@@ -158,6 +160,7 @@ function initBuffers() {
 	// bind created buffer object in GL framework
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
 	// coords (x,y,z) -> since z is constant 0, we have a 2d element
+	// stores vertices in the cube to be later referred to by the indexbuffer
 	var vertices = [
 		// Front face
 		-1.0, -1.0,  1.0,
@@ -198,8 +201,7 @@ function initBuffers() {
 
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-	updateColors();
-
+	updateColors(); // updates generatedColors array
 	cubeVerticesColorBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
