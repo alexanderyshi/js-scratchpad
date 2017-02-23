@@ -44,7 +44,7 @@
 
 // assets
 {
-	var	colorVertices = [
+	var	vertices = [ // vertices are shared by multiple shaders for the single entity on screen
 		// Front face
 		-1.0, -1.0,  1.0,
 		1.0, -1.0,  1.0,
@@ -82,14 +82,19 @@
 		-1.0,  1.0, -1.0
 	];
 
-	var textureVertices = [
-		]	
-
-
-	var cubeVertexIndices = [
+	var cubeColorVertexIndices = [
 		0,  1,  2,      0,  2,  3,    // front
 		4,  5,  6,      4,  6,  7,    // back
 		8,  9,  10,     8,  10, 11,   // top
+		// 12, 13, 14,     12, 14, 15,   // bottom
+		// 16, 17, 18,     16, 18, 19,   // right
+		// 20, 21, 22,     20, 22, 23    // left
+	];
+	
+	var cubeTextureVertexIndices = [
+		// 0,  1,  2,      0,  2,  3,    // front
+		// 4,  5,  6,      4,  6,  7,    // back
+		// 8,  9,  10,     8,  10, 11,   // top
 		12, 13, 14,     12, 14, 15,   // bottom
 		16, 17, 18,     16, 18, 19,   // right
 		20, 21, 22,     20, 22, 23    // left
@@ -178,9 +183,6 @@ function initColorShaders() {
 		console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(colorShaderProgram));
 	}
 
-	// AYS! should not be called here, call later before drawing
-	gl.useProgram(colorShaderProgram);
-
 	vertexColorAttribute = gl.getAttribLocation(colorShaderProgram, 'aVertexColor');
   	gl.enableVertexAttribArray(vertexColorAttribute);
 	vertexPositionAttribute = gl.getAttribLocation(colorShaderProgram, 'aVertexPosition');
@@ -250,6 +252,11 @@ function initBuffers() {
 	cubeVerticesBuffer = gl.createBuffer(); // coords (x,y,z) -> since z is constant 0, we have a 2d element
 	cubeVerticesColorBuffer = gl.createBuffer(); // stores vertices in the cube to be later referred to by the indexbuffer
 	cubeVerticesIndexBuffer = gl.createBuffer(); // sets of triangles that possess the values of the corresponding index of cubeVerticesBuffer
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
 }
 
 function updateColors()
@@ -258,16 +265,19 @@ function updateColors()
 	var valB = Math.pow(Math.sin(tick/90),4);
 	// these are 4 attribute arrays
 	colors = [
-		[valA/valB,  valB/valA,  (valA+valB)/2,  1],    // Front face: wildcard
-		[valA,  valB,  valB,  1],    // Back face: red
-		[valB,  valA,  valB,  1],    // Top face: green
-		[valB,  valB,  valA,  1],    // Bottom face: blue
-		[valA,  valA,  valB,  1],    // Right face: yellow
-		[valA,  valB,  valA,  1]     // Left face: purple
+		[valA/valB,  valB/valA,  (valA+valB)/2,  .8],    // Front face: wildcard
+		[valA,  valB,  valB,  .8],    // Back face: red
+		[valB,  valA,  valB,  .8],    // Top face: green
+		// [valB,  valB,  valA,  1],    // Bottom face: blue
+		// [valA,  valA,  valB,  1],    // Right face: yellow
+		// [valA,  valB,  valA,  1]     // Left face: purple
+		[0,0,0,  .8],    // Bottom face: blue
+		[1,1,1,  .8],    // Right face: yellow
+		[0.5,0.5,0.5,  .8]     // Left face: purple
 	];
 
 	generatedColors = [];
-
+	// !AYS array has elements : 6 faces x 4 values (RGBA) x 4 ??? -> how does this turn into 78 vals at runtime?
 	for (var j = 0; j < 6; j++) {
 		var c = colors[j];
 
@@ -278,23 +288,38 @@ function updateColors()
   	tick++;
 }
 
-function updateBuffers()
+function loadColorBuffers()
 {
-	// void gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
-	// gl.vertexAttribPointer(always 0, 3 dimensions, float type storage in vertices array, fixed point values instead of normalized, no offset between vertices in storage, no offset to start storage of array);
-	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorVertices), gl.STATIC_DRAW);
-	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-
-	// repeat for colour vertices
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
 	updateColors(); // updates generatedColors array
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+	// void gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+	// gl.vertexAttribPointer(always 0, 3 dimensions, float type storage in vertices array, fixed point values instead of normalized, no offset between vertices in storage, no offset to start storage of array);
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-    	new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+    	new Uint16Array(cubeColorVertexIndices), gl.STATIC_DRAW);
+}
+
+function loadTextureBuffers()
+{
+	// repeat for colour vertices
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
+	updateColors(); // updates generatedColors array
+	// var mArray = [];
+	// Object.assign(mArray, generatedColors);
+    // console.log(mArray);
+	// mArray = mArray.splice(generatedColors.length/2,generatedColors.length/2);
+	// gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mArray), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+    // console.log(mArray);
+    // console.log(generatedColors.length);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+    	new Uint16Array(cubeTextureVertexIndices), gl.STATIC_DRAW);
 }
 
 function updatePosition() {
@@ -339,9 +364,15 @@ function drawScene() {
 	mvRotate(cubeRotation, [1, 0, 1]);
 	mvTranslate([mXOffset, mYOffset, mZOffset]);
 
-	updateBuffers();
-	setMatrixUniforms();
-	gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+	gl.useProgram(colorShaderProgram);
+	loadColorBuffers();
+	setColorMatrixUniforms();
+	gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
+
+	gl.useProgram(textureShaderProgram);
+	loadTextureBuffers();
+	setTextureMatrixUniforms();
+	gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
 
 	// restore original matrix after drawing - AYS who is using this?!?
 	mvPopMatrix();
@@ -363,12 +394,22 @@ function mvTranslate(v) {
   	multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
 }
 
-function setMatrixUniforms() {
+function setColorMatrixUniforms() {
 	var pUniform = gl.getUniformLocation(colorShaderProgram, "uPMatrix");
 	// how is perspectivematrix still in scope? shouldn't it be passed in?
 	gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
 
 	var mvUniform = gl.getUniformLocation(colorShaderProgram, "uMVMatrix");
+	// how is mvmatrix still in scope? shouldn't it be passed in?
+	gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
+}
+
+function setTextureMatrixUniforms() {
+	var pUniform = gl.getUniformLocation(textureShaderProgram, "uPMatrix");
+	// how is perspectivematrix still in scope? shouldn't it be passed in?
+	gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
+
+	var mvUniform = gl.getUniformLocation(textureShaderProgram, "uMVMatrix");
 	// how is mvmatrix still in scope? shouldn't it be passed in?
 	gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
