@@ -9,25 +9,92 @@
 	with a focus on using the WebGL API and without scope on how the underlying OpenGL works
 */
 
-var gl; // global gl context var
-var horizAspect = 1000.0/1000.0; // usually width/height
+// gl globals
+{	
+	var gl; // global gl context var
+	var horizAspect = 1000.0/1000.0; // usually width/height
+}
 
-var cubeRotation = 0.0;
-var tick = 0;
+//motion
+{		
+	var cubeRotation = 0.0;
+	var tick = 0;
+	var mXOffset = 0.0;
+	var mYOffset = 0.0;
+	var mZOffset = 0.0;
+	var xIncValue = 0.2;
+	var yIncValue = -0.4;
+	var zIncValue = 0.3;
+	var lastCubeUpdateTime;
+}
 
-var mXOffset = 0.0;
-var mYOffset = 0.0;
-var mZOffset = 0.0;
-var xIncValue = 0.2;
-var yIncValue = -0.4;
-var zIncValue = 0.3;
-var lastCubeUpdateTime;
+// buffers
+{
+	var colors;
+	var generatedColors;
+	var cubeVerticesBuffer;
+	var cubeVerticesColorBuffer;
+	var cubeVerticesIndexBuffer;
 
-var colors;
-var generatedColors;
-var cubeVerticesBuffer;
-var cubeVerticesColorBuffer;
-var cubeVerticesIndexBuffer;
+	var colorShaderProgram;
+	var textureShaderProgram;
+	var fragmentShader;
+	var vertexShader;
+}
+
+// assets
+{
+	var	colorVertices = [
+		// Front face
+		-1.0, -1.0,  1.0,
+		1.0, -1.0,  1.0,
+		1.0,  1.0,  1.0,
+		-1.0,  1.0,  1.0,
+
+		// Back face
+		-1.0, -1.0, -1.0,
+		-1.0,  1.0, -1.0,
+		1.0,  1.0, -1.0,
+		1.0, -1.0, -1.0,
+
+		// Top face
+		-1.0,  1.0, -1.0,
+		-1.0,  1.0,  1.0,
+		1.0,  1.0,  1.0,
+		1.0,  1.0, -1.0,
+
+		// Bottom face
+		-1.0, -1.0, -1.0,
+		1.0, -1.0, -1.0,
+		1.0, -1.0,  1.0,
+		-1.0, -1.0,  1.0,
+
+		// Right face
+		1.0, -1.0, -1.0,
+		1.0,  1.0, -1.0,
+		1.0,  1.0,  1.0,
+		1.0, -1.0,  1.0,
+
+		// Left face
+		-1.0, -1.0, -1.0,
+		-1.0, -1.0,  1.0,
+		-1.0,  1.0,  1.0,
+		-1.0,  1.0, -1.0
+	];
+
+	var textureVertices = [
+		]	
+
+
+	var cubeVertexIndices = [
+		0,  1,  2,      0,  2,  3,    // front
+		4,  5,  6,      4,  6,  7,    // back
+		8,  9,  10,     8,  10, 11,   // top
+		12, 13, 14,     12, 14, 15,   // bottom
+		16, 17, 18,     16, 18, 19,   // right
+		20, 21, 22,     20, 22, 23    // left
+	];
+}
 
 function start() {
 	// makes sense to not need this to be global - does it get GC?
@@ -92,25 +159,49 @@ function initWebGL(canvas) {
 
 function initShaders() {
 	// shaders are in html, provided by tut.
-	var fragmentShader = getShader(gl, 'shader-fs'); // each pixel in a polygon is a FRAGMENT - this handles the colours of said fragments
-	var vertexShader = getShader(gl, 'shader-vs'); // handles positions of vertexs
+	fragmentShader = getShader(gl, 'shader-fs'); // each pixel in a polygon is a FRAGMENT - this handles the colours of said fragments
+	vertexShader = getShader(gl, 'shader-vs'); // handles positions of vertexs
 
+	initColorShaders();
+	initTextureShaders();
+}
+
+function initColorShaders() {
 	// Create the shader program
-	shaderProgram = gl.createProgram();
-	gl.attachShader(shaderProgram, vertexShader);
-	gl.attachShader(shaderProgram, fragmentShader);
-	gl.linkProgram(shaderProgram);
+	colorShaderProgram = gl.createProgram();
+	gl.attachShader(colorShaderProgram, vertexShader);
+	gl.attachShader(colorShaderProgram, fragmentShader);
+	gl.linkProgram(colorShaderProgram);
 
 	// If creating the shader program failed, alert
-	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-		console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+	if (!gl.getProgramParameter(colorShaderProgram, gl.LINK_STATUS)) {
+		console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(colorShaderProgram));
 	}
 
-	gl.useProgram(shaderProgram);
+	// AYS! should not be called here, call later before drawing
+	gl.useProgram(colorShaderProgram);
 
-	vertexColorAttribute = gl.getAttribLocation(shaderProgram, 'aVertexColor');
+	vertexColorAttribute = gl.getAttribLocation(colorShaderProgram, 'aVertexColor');
   	gl.enableVertexAttribArray(vertexColorAttribute);
-	vertexPositionAttribute = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
+	vertexPositionAttribute = gl.getAttribLocation(colorShaderProgram, 'aVertexPosition');
+	gl.enableVertexAttribArray(vertexPositionAttribute);
+}
+
+function initTextureShaders() {
+	// Create the shader program
+	textureShaderProgram = gl.createProgram();
+	gl.attachShader(textureShaderProgram, vertexShader);
+	gl.attachShader(textureShaderProgram, fragmentShader);
+	gl.linkProgram(textureShaderProgram);
+
+	// If creating the shader program failed, alert
+	if (!gl.getProgramParameter(textureShaderProgram, gl.LINK_STATUS)) {
+		console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(textureShaderProgram));
+	}
+
+	vertexColorAttribute = gl.getAttribLocation(textureShaderProgram, 'aVertexColor');
+  	gl.enableVertexAttribArray(vertexColorAttribute);
+	vertexPositionAttribute = gl.getAttribLocation(textureShaderProgram, 'aVertexPosition');
 	gl.enableVertexAttribArray(vertexPositionAttribute);
 }
 
@@ -155,70 +246,10 @@ function getShader(gl, id, type) {
 }
 
 function initBuffers() {
-	// create buffer storage object 
-	cubeVerticesBuffer = gl.createBuffer();
-	// bind created buffer object in GL framework
-	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
-	// coords (x,y,z) -> since z is constant 0, we have a 2d element
-	// stores vertices in the cube to be later referred to by the indexbuffer
-	var vertices = [
-		// Front face
-		-1.0, -1.0,  1.0,
-		1.0, -1.0,  1.0,
-		1.0,  1.0,  1.0,
-		-1.0,  1.0,  1.0,
-
-		// Back face
-		-1.0, -1.0, -1.0,
-		-1.0,  1.0, -1.0,
-		1.0,  1.0, -1.0,
-		1.0, -1.0, -1.0,
-
-		// Top face
-		-1.0,  1.0, -1.0,
-		-1.0,  1.0,  1.0,
-		1.0,  1.0,  1.0,
-		1.0,  1.0, -1.0,
-
-		// Bottom face
-		-1.0, -1.0, -1.0,
-		1.0, -1.0, -1.0,
-		1.0, -1.0,  1.0,
-		-1.0, -1.0,  1.0,
-
-		// Right face
-		1.0, -1.0, -1.0,
-		1.0,  1.0, -1.0,
-		1.0,  1.0,  1.0,
-		1.0, -1.0,  1.0,
-
-		// Left face
-		-1.0, -1.0, -1.0,
-		-1.0, -1.0,  1.0,
-		-1.0,  1.0,  1.0,
-		-1.0,  1.0, -1.0
-	];
-
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-	updateColors(); // updates generatedColors array
-	cubeVerticesColorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
-	
-	cubeVerticesIndexBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
-	// sets of triangles that possess the values of the corresponding index of cubeVerticesBuffer
-	var cubeVertexIndices = [
-		0,  1,  2,      0,  2,  3,    // front
-		4,  5,  6,      4,  6,  7,    // back
-		8,  9,  10,     8,  10, 11,   // top
-		12, 13, 14,     12, 14, 15,   // bottom
-		16, 17, 18,     16, 18, 19,   // right
-		20, 21, 22,     20, 22, 23    // left
-	];
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-    	new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+	// create buffer storage objects
+	cubeVerticesBuffer = gl.createBuffer(); // coords (x,y,z) -> since z is constant 0, we have a 2d element
+	cubeVerticesColorBuffer = gl.createBuffer(); // stores vertices in the cube to be later referred to by the indexbuffer
+	cubeVerticesIndexBuffer = gl.createBuffer(); // sets of triangles that possess the values of the corresponding index of cubeVerticesBuffer
 }
 
 function updateColors()
@@ -247,35 +278,26 @@ function updateColors()
   	tick++;
 }
 
-function drawScene() {
-	initBuffers();
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	// makePerspective (FOV angle in deg, width:height, min depth, max depth)
-	perspectiveMatrix = makePerspective(45, horizAspect, 0.1, 100.0);
-
-	loadIdentity(); // default camera position
-	mvTranslate([-0.0, 0.0, -12.0]); // move back 12 units to get object in view
-
-	// done after translation
-	mvPushMatrix();
-	mvRotate(cubeRotation, [1, 0, 1]);
-	mvTranslate([mXOffset, mYOffset, mZOffset]);
-
+function updateBuffers()
+{
 	// void gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
 	// gl.vertexAttribPointer(always 0, 3 dimensions, float type storage in vertices array, fixed point values instead of normalized, no offset between vertices in storage, no offset to start storage of array);
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorVertices), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 
 	// repeat for colour vertices
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
+	updateColors(); // updates generatedColors array
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
-	setMatrixUniforms();
-	gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+    	new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+}
 
-	// restore original matrix after drawing - AYS who is using this?!?
-	mvPopMatrix();
+function updatePosition() {
 
 	var currentTime = Date.now();
 	if (lastCubeUpdateTime) {
@@ -302,7 +324,29 @@ function drawScene() {
 	}
   	
   	lastCubeUpdateTime = currentTime;
-  
+}
+
+function drawScene() {
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	// makePerspective (FOV angle in deg, width:height, min depth, max depth)
+	perspectiveMatrix = makePerspective(45, horizAspect, 0.1, 100.0);
+
+	loadIdentity(); // default camera position
+	mvTranslate([-0.0, 0.0, -12.0]); // move back 12 units to get object in view
+
+	// done after translation
+	mvPushMatrix();
+	mvRotate(cubeRotation, [1, 0, 1]);
+	mvTranslate([mXOffset, mYOffset, mZOffset]);
+
+	updateBuffers();
+	setMatrixUniforms();
+	gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+
+	// restore original matrix after drawing - AYS who is using this?!?
+	mvPopMatrix();
+
+	updatePosition();
 }
 
 // Matrix library helpers from sylvester, glutils
@@ -320,11 +364,11 @@ function mvTranslate(v) {
 }
 
 function setMatrixUniforms() {
-	var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+	var pUniform = gl.getUniformLocation(colorShaderProgram, "uPMatrix");
 	// how is perspectivematrix still in scope? shouldn't it be passed in?
 	gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
 
-	var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+	var mvUniform = gl.getUniformLocation(colorShaderProgram, "uMVMatrix");
 	// how is mvmatrix still in scope? shouldn't it be passed in?
 	gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
