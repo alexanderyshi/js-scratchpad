@@ -309,7 +309,8 @@ function initTextures() {
 	cubeTexture = gl.createTexture();
 	cubeImage = new Image();
 	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture); }
-	// !! will require a simple web server to satisfy CORS 
+	// !! AYS may get complaints about image not loaded yet at draw call time
+	// !! will require a simple web server to satisfy CORS - disable web page caching!
 	cubeImage.src = 'cubetexture.png';
 }
 
@@ -319,7 +320,7 @@ function handleTextureLoaded(image, texture) {
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-	// NPOT textures enabled by disabling mipmapping, UV tiling
+	// // NPOT textures enabled by disabling mipmapping, UV tiling
 	// // gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
 	// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	// // Prevents s-coordinate wrapping (repeating).
@@ -327,6 +328,7 @@ function handleTextureLoaded(image, texture) {
 	// // Prevents t-coordinate wrapping (repeating).
 	// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	gl.generateMipmap(gl.TEXTURE_2D);
+	// clear texture buffer?
 	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
