@@ -35,15 +35,30 @@
 	var cubeVerticesBuffer;
 	var cubeVerticesColorBuffer;
 	var cubeVerticesIndexBuffer;
+	var cubeVerticesTextureCoordBuffer;
 
 	var colorShaderProgram;
 	var textureShaderProgram;
-	var fragmentShader;
-	var vertexShader;
+	var fragmentShaderSolidColor;
+	var vertexShaderSolidColor;
+	var fragmentShaderTexture;
+	var vertexShaderTexture;
+
+	var textureCoordAttribute;
+	var vertexPositionAttributeColor;
+	var vertexPositionAttributeTexture;
+
+}
+
+// textures
+{
+	var cubeTexture;
+	var cubeImage;
 }
 
 // assets
 {
+	// !! vertices and textureCoordinates must be full length in order for indexing arrays to work
 	var	vertices = [ // vertices are shared by multiple shaders for the single entity on screen
 		// Front face
 		-1.0, -1.0,  1.0,
@@ -80,6 +95,39 @@
 		-1.0, -1.0,  1.0,
 		-1.0,  1.0,  1.0,
 		-1.0,  1.0, -1.0
+	];
+	// normalized to [0,1] due to uv coord format
+	var textureCoordinates = [
+   // Front
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Back
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Top
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Bottom
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Right
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+    0.0,  1.0,
+    // Left
+    0.0,  0.0,
+    1.0,  0.0,
+    1.0,  1.0,
+	0.0, 1.0
 	];
 
 	var cubeColorVertexIndices = [
@@ -141,6 +189,8 @@ function start() {
 
     initBuffers();
 
+    initTextures();
+
     // Set up to draw the scene periodically.
 
 	setInterval(drawScene, 33);
@@ -164,8 +214,10 @@ function initWebGL(canvas) {
 
 function initShaders() {
 	// shaders are in html, provided by tut.
-	fragmentShader = getShader(gl, 'shader-fs'); // each pixel in a polygon is a FRAGMENT - this handles the colours of said fragments
-	vertexShader = getShader(gl, 'shader-vs'); // handles positions of vertexs
+	fragmentShaderSolidColor = getShader(gl, 'shader-fs-solid-color'); // each pixel in a polygon is a FRAGMENT - this handles the colours of said fragments
+	vertexShaderSolidColor = getShader(gl, 'shader-vs-solid-color'); // handles positions of vertexs
+	fragmentShaderTexture = getShader(gl, 'shader-fs-texture');
+	vertexShaderTexture = getShader(gl, 'shader-vs-texture');
 
 	initColorShaders();
 	initTextureShaders();
@@ -174,37 +226,34 @@ function initShaders() {
 function initColorShaders() {
 	// Create the shader program
 	colorShaderProgram = gl.createProgram();
-	gl.attachShader(colorShaderProgram, vertexShader);
-	gl.attachShader(colorShaderProgram, fragmentShader);
+	gl.attachShader(colorShaderProgram, vertexShaderSolidColor);
+	gl.attachShader(colorShaderProgram, fragmentShaderSolidColor);
 	gl.linkProgram(colorShaderProgram);
 
 	// If creating the shader program failed, alert
 	if (!gl.getProgramParameter(colorShaderProgram, gl.LINK_STATUS)) {
 		console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(colorShaderProgram));
 	}
-
 	vertexColorAttribute = gl.getAttribLocation(colorShaderProgram, 'aVertexColor');
   	gl.enableVertexAttribArray(vertexColorAttribute);
-	vertexPositionAttribute = gl.getAttribLocation(colorShaderProgram, 'aVertexPosition');
-	gl.enableVertexAttribArray(vertexPositionAttribute);
+	vertexPositionAttributeColor = gl.getAttribLocation(colorShaderProgram, 'aVertexPosition');
+	gl.enableVertexAttribArray(vertexPositionAttributeColor);
 }
 
 function initTextureShaders() {
 	// Create the shader program
 	textureShaderProgram = gl.createProgram();
-	gl.attachShader(textureShaderProgram, vertexShader);
-	gl.attachShader(textureShaderProgram, fragmentShader);
+	gl.attachShader(textureShaderProgram, vertexShaderTexture);
+	gl.attachShader(textureShaderProgram, fragmentShaderTexture);
 	gl.linkProgram(textureShaderProgram);
-
 	// If creating the shader program failed, alert
 	if (!gl.getProgramParameter(textureShaderProgram, gl.LINK_STATUS)) {
 		console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(textureShaderProgram));
 	}
-
-	vertexColorAttribute = gl.getAttribLocation(textureShaderProgram, 'aVertexColor');
-  	gl.enableVertexAttribArray(vertexColorAttribute);
-	vertexPositionAttribute = gl.getAttribLocation(textureShaderProgram, 'aVertexPosition');
-	gl.enableVertexAttribArray(vertexPositionAttribute);
+	textureCoordAttribute = gl.getAttribLocation(textureShaderProgram, "aTextureCoord");
+	gl.enableVertexAttribArray(textureCoordAttribute);
+	vertexPositionAttributeTexture = gl.getAttribLocation(textureShaderProgram, "aVertexPosition");
+	gl.enableVertexAttribArray(vertexPositionAttributeTexture);
 }
 
 // load shaders from HTML instead of building in js
@@ -252,11 +301,33 @@ function initBuffers() {
 	cubeVerticesBuffer = gl.createBuffer(); // coords (x,y,z) -> since z is constant 0, we have a 2d element
 	cubeVerticesColorBuffer = gl.createBuffer(); // stores vertices in the cube to be later referred to by the indexbuffer
 	cubeVerticesIndexBuffer = gl.createBuffer(); // sets of triangles that possess the values of the corresponding index of cubeVerticesBuffer
+	cubeVerticesTextureCoordBuffer = gl.createBuffer();
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+}
 
+function initTextures() {
+	cubeTexture = gl.createTexture();
+	cubeImage = new Image();
+	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture); }
+	// !! will require a simple web server to satisfy CORS 
+	cubeImage.src = 'cubetexture.png';
+}
+
+function handleTextureLoaded(image, texture) {
+	 console.log("handleTextureLoaded, image = " + image);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+	// NPOT textures enabled by disabling mipmapping, UV tiling
+	// // gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
+	// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	// // Prevents s-coordinate wrapping (repeating).
+	// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	// // Prevents t-coordinate wrapping (repeating).
+	// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 function updateColors()
@@ -290,6 +361,10 @@ function updateColors()
 
 function loadColorBuffers()
 {
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(vertexPositionAttributeColor, 3, gl.FLOAT, false, 0, 0);
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
 	updateColors(); // updates generatedColors array
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
@@ -304,18 +379,15 @@ function loadColorBuffers()
 
 function loadTextureBuffers()
 {
-	// repeat for colour vertices
-	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColorBuffer);
-	updateColors(); // updates generatedColors array
-	// var mArray = [];
-	// Object.assign(mArray, generatedColors);
-    // console.log(mArray);
-	// mArray = mArray.splice(generatedColors.length/2,generatedColors.length/2);
-	// gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mArray), gl.STATIC_DRAW);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(generatedColors), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-    // console.log(mArray);
-    // console.log(generatedColors.length);
+	// TEXTURE
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(vertexPositionAttributeTexture, 3, gl.FLOAT, false, 0, 0);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesTextureCoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),
+              gl.STATIC_DRAW);
+	gl.vertexAttribPointer(textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
@@ -371,6 +443,11 @@ function drawScene() {
 
 	gl.useProgram(textureShaderProgram);
 	loadTextureBuffers();
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
+	gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 0);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
 	setTextureMatrixUniforms();
 	gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
 
