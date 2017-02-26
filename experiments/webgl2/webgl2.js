@@ -133,7 +133,7 @@
 	var cubeColorVertexIndices = [
 		0,  1,  2,      0,  2,  3,    // front
 		4,  5,  6,      4,  6,  7,    // back
-		8,  9,  10,     8,  10, 11,   // top
+		// 8,  9,  10,     8,  10, 11,   // top
 		// 12, 13, 14,     12, 14, 15,   // bottom
 		// 16, 17, 18,     16, 18, 19,   // right
 		// 20, 21, 22,     20, 22, 23    // left
@@ -142,10 +142,10 @@
 	var cubeTextureVertexIndices = [
 		// 0,  1,  2,      0,  2,  3,    // front
 		// 4,  5,  6,      4,  6,  7,    // back
-		// 8,  9,  10,     8,  10, 11,   // top
+		8,  9,  10,     8,  10, 11,   // top
 		12, 13, 14,     12, 14, 15,   // bottom
-		16, 17, 18,     16, 18, 19,   // right
-		20, 21, 22,     20, 22, 23    // left
+		// 16, 17, 18,     16, 18, 19,   // right
+		// 20, 21, 22,     20, 22, 23    // left
 	];
 }
 
@@ -336,17 +336,19 @@ function updateColors()
 {
 	var valA = Math.pow(Math.cos(tick/90),4);
 	var valB = Math.pow(Math.sin(tick/90),4);
+	var faceColor = [valA/valB,  valB/valA,  (valA+valB)/2,  .8];
+	var faceColorInverse = [1 - faceColor[0], 1 - faceColor[1],  1 - faceColor[2],  .8];
 	// these are 4 attribute arrays
 	colors = [
-		[valA/valB,  valB/valA,  (valA+valB)/2,  .8],    // Front face: wildcard
-		[valA,  valB,  valB,  .8],    // Back face: red
-		[valB,  valA,  valB,  .8],    // Top face: green
+		faceColor,    // Front face: wildcard
+		faceColorInverse,    // Back face: red
+		// [valB,  valA,  valB,  .8],    // Top face: green
 		// [valB,  valB,  valA,  1],    // Bottom face: blue
 		// [valA,  valA,  valB,  1],    // Right face: yellow
 		// [valA,  valB,  valA,  1]     // Left face: purple
-		[0,0,0,  .8],    // Bottom face: blue
-		[1,1,1,  .8],    // Right face: yellow
-		[0.5,0.5,0.5,  .8]     // Left face: purple
+		// [0,0,0,  .8],    
+		// [1,1,1,  .8],    
+		// [0.5,0.5,0.5, .8]
 	];
 
 	generatedColors = [];
@@ -441,7 +443,7 @@ function drawScene() {
 	gl.useProgram(colorShaderProgram);
 	loadColorBuffers();
 	setColorMatrixUniforms();
-	gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
+	gl.drawElements(gl.TRIANGLES, cubeColorVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
 	gl.useProgram(textureShaderProgram);
 	loadTextureBuffers();
@@ -451,7 +453,7 @@ function drawScene() {
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
 	setTextureMatrixUniforms();
-	gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0);
+	gl.drawElements(gl.TRIANGLES, cubeTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
 	// restore original matrix after drawing - AYS who is using this?!?
 	mvPopMatrix();
