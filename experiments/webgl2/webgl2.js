@@ -60,7 +60,9 @@
 // textures
 {
 	var cubeTexture;
+	var cubeCanvasTexture;
 	var cubeImage;
+	var cubeCanvasImage;
 }
 
 // assets
@@ -191,6 +193,15 @@
 		12, 13, 14,     12, 14, 15,   // bottom
 		// 16, 17, 18,     16, 18, 19,   // right
 		// 20, 21, 22,     20, 22, 23    // left
+	];
+
+	var cubeCanvasTextureVertexIndices = [
+		// 0,  1,  2,      0,  2,  3,    // front
+		// 4,  5,  6,      4,  6,  7,    // back
+		// 8,  9,  10,     8,  10, 11,   // top
+		// 12, 13, 14,     12, 14, 15,   // bottom
+		16, 17, 18,     16, 18, 19,   // right
+		20, 21, 22,     20, 22, 23    // left
 	];
 }
 
@@ -364,15 +375,18 @@ function initBuffers() { // why is it OK that I set these just the one time but 
 
 function initTextures() {
 	cubeTexture = gl.createTexture();
+	cubeCanvasTexture = gl.createTexture();
 	cubeImage = new Image();
-	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture); }
+	cubeCanvasImage = new Image();
+	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture); };
+	cubeCanvasImage.onload = function() {handleTextureLoaded(gl.canvas, cubeCanvasTexture);};
 	// !! AYS may get complaints about image not loaded yet at draw call time
 	// !! will require a simple web server to satisfy CORS - disable web page caching!
 	cubeImage.src = 'cubetexture.png';
+	cubeCanvasImage.src = 'cubetexture.png'; // placeholder until it gets updated
 }
 
 function handleTextureLoaded(image, texture) {
-	 // console.log("handleTextureLoaded, image = " + image);
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -452,6 +466,21 @@ function loadTextureBuffers()
 	gl.vertexAttribPointer(vertexNormalAttributeTexture, 3, gl.FLOAT, false, 0, 0);
 }
 
+function loadCanvasTextureBuffers()
+{
+	// TEXTURE
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesTextureCoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),
+              gl.STATIC_DRAW);
+	gl.vertexAttribPointer(textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+    	new Uint16Array(cubeCanvasTextureVertexIndices), gl.STATIC_DRAW);
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesNormalBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(vertexNormalAttributeTexture, 3, gl.FLOAT, false, 0, 0);
+}
 function updatePosition() {
 
 	var currentTime = Date.now();
@@ -506,15 +535,22 @@ function drawScene() {
 	setMatrixUniforms(colorShaderProgram);
 	gl.drawElements(gl.TRIANGLES, cubeColorVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
+	// Texture shaders
 	gl.useProgram(textureShaderProgram);
-	loadTextureBuffers();
 	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
 	gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 0);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
+	// local texture
+	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
 	setMatrixUniforms(textureShaderProgram);
+	loadTextureBuffers();
 	gl.drawElements(gl.TRIANGLES, cubeTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
+
+	// canvas texture
+	gl.bindTexture(gl.TEXTURE_2D, cubeCanvasTexture);
+	setMatrixUniforms(textureShaderProgram);
+	loadCanvasTextureBuffers();
+	gl.drawElements(gl.TRIANGLES, cubeCanvasTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
 	// restore original matrix after drawing - AYS who is using this?!?
 	mvPopMatrix();
