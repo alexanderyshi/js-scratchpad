@@ -563,6 +563,8 @@ function drawScene() {
 	loadCanvasTextureBuffers();
 	gl.drawElements(gl.TRIANGLES, cubeCanvasTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
+	// update canvas texture
+	handleTextureLoaded(gl.canvas, cubeCanvasTexture, 1);
 	// restore original matrix after drawing - AYS who is using this?!?
 	mvPopMatrix();
 
