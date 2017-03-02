@@ -378,15 +378,23 @@ function initTextures() {
 	cubeCanvasTexture = gl.createTexture();
 	cubeImage = new Image();
 	cubeCanvasImage = new Image();
-	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture); };
-	cubeCanvasImage.onload = function() {handleTextureLoaded(gl.canvas, cubeCanvasTexture);};
+	cubeCanvasImage.onload = function() {handleTextureLoaded(gl.canvas, cubeCanvasTexture, 1);};
+	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture, 0); };
 	// !! AYS may get complaints about image not loaded yet at draw call time
 	// !! will require a simple web server to satisfy CORS - disable web page caching!
 	cubeImage.src = 'cubetexture.png';
 	cubeCanvasImage.src = 'cubetexture.png'; // placeholder until it gets updated
 }
 
-function handleTextureLoaded(image, texture) {
+function handleTextureLoaded(image, texture, textureNum) {
+	if (textureNum === 0)
+	{
+		gl.activeTexture(gl.TEXTURE0);
+	}
+	else if (textureNum === 1)
+	{
+		gl.activeTexture(gl.TEXTURE1);
+	}
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -537,7 +545,8 @@ function drawScene() {
 
 	// Texture shaders
 	gl.useProgram(textureShaderProgram);
-	gl.activeTexture(gl.TEXTURE0);
+	gl.activeTexture(gl.TEXTURE0); // !! AYS not sure how this works but switching the activeTexture() call positions results in flipped assets
+	// !! AYS not sure how this works but switching the uniform1i() call positions results in flipped assets
 	gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 0);
 
 	// local texture
@@ -547,6 +556,8 @@ function drawScene() {
 	gl.drawElements(gl.TRIANGLES, cubeTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
 	// canvas texture
+	gl.activeTexture(gl.TEXTURE1);
+	gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 1);
 	gl.bindTexture(gl.TEXTURE_2D, cubeCanvasTexture);
 	setMatrixUniforms(textureShaderProgram);
 	loadCanvasTextureBuffers();
