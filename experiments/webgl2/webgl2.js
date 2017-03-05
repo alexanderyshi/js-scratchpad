@@ -30,6 +30,7 @@
 	var yIncValue = -0.4;
 	var zIncValue = 0.3;
 	var lastCubeUpdateTime;
+	var ROTATION_CONST = 60;
 }
 
 // buffers
@@ -495,7 +496,8 @@ function updatePosition() {
 	if (lastCubeUpdateTime) {
 	  	var delta = currentTime - lastCubeUpdateTime;
 	  	
-		cubeRotation += (30 * delta) / 1000.0;
+		cubeRotation += (ROTATION_CONST * delta) / 1000.0;
+		console.log()
 		mXOffset += xIncValue * ((3 * delta) / 1000.0);
 	    mYOffset += yIncValue * ((3 * delta) / 1000.0);
 	    mZOffset += zIncValue * ((3 * delta) / 1000.0);
