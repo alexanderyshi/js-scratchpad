@@ -56,14 +56,53 @@
 	var vertexNormalAttributeColor; // why must these be seperate but not vertices?
 	var vertexNormalAttributeTexture;
 
+    var canvasFrameBuffer;
 }
 
 // textures
 {
 	var cubeTexture;
 	var cubeCanvasTexture;
+	var cubeFrameBufferTexture;
 	var cubeImage;
-	var cubeCanvasImage;
+}
+
+// framebuffer stuff
+{
+	var convKernels = {
+	    normal: [
+	      0, 0, 0,
+	      0, 1, 0,
+	      0, 0, 0
+	    ],
+	    edgeDetectKernel: [
+			-1, -1, -1,
+			-1,  8, -1,
+			-1, -1, -1
+ 		],
+	    gaussianBlur: [
+	      0.045, 0.122, 0.045,
+	      0.122, 0.332, 0.122,
+	      0.045, 0.122, 0.045
+	    ],
+	    unsharpen: [
+	      -1, -1, -1,
+	      -1,  9, -1,
+	      -1, -1, -1
+	    ],
+	    emboss: [
+	       -2, -1,  0,
+	       -1,  1,  1,
+	        0,  1,  2
+	    ]
+	}	
+	  // List of effects to apply.
+	var effectsToApply = [
+		"gaussianBlur",
+		"emboss",
+		"gaussianBlur",
+		"unsharpen"
+	];
 }
 
 // assets
@@ -202,6 +241,15 @@
 		// 8,  9,  10,     8,  10, 11,   // top
 		// 12, 13, 14,     12, 14, 15,   // bottom
 		16, 17, 18,     16, 18, 19,   // right
+		// 20, 21, 22,     20, 22, 23    // left
+	];
+
+	var cubeCanvasFrameBufferTextureVertexIndices = [
+		// 0,  1,  2,      0,  2,  3,    // front
+		// 4,  5,  6,      4,  6,  7,    // back
+		// 8,  9,  10,     8,  10, 11,   // top
+		// 12, 13, 14,     12, 14, 15,   // bottom
+		// 16, 17, 18,     16, 18, 19,   // right
 		20, 21, 22,     20, 22, 23    // left
 	];
 }
@@ -245,6 +293,7 @@ function start() {
     // we'll be drawing.
 
     initBuffers();
+    initFrameBuffers();
 	updateColors(); 
     initTextures();
 
@@ -374,17 +423,36 @@ function initBuffers() { // why is it OK that I set these just the one time but 
 
 }
 
+function initFrameBuffers() {
+    // Create a framebuffer
+    canvasFrameBuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, canvasFrameBuffer);
+ 
+    // Attach a texture to it.
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, cubeFrameBufferTexture, 0);
+}
+
 function initTextures() {
 	cubeTexture = gl.createTexture();
 	cubeCanvasTexture = gl.createTexture();
+	cubeFrameBufferTexture = gl.createTexture();
+	
 	cubeImage = new Image();
-	cubeCanvasImage = new Image();
-	cubeCanvasImage.onload = function() {handleTextureLoaded(gl.canvas, cubeCanvasTexture, 1);};
 	cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture, 0); };
 	// !! AYS may get complaints about image not loaded yet at draw call time
 	// !! will require a simple web server to satisfy CORS - disable web page caching!
 	cubeImage.src = 'cubetexture.png';
-	cubeCanvasImage.src = 'cubetexture.png'; // placeholder until it gets updated
+
+	handleTextureLoaded(gl.canvas, cubeCanvasTexture, 1);
+	
+	// canvas image on frame buffer
+	gl.activeTexture(gl.TEXTURE2);	
+	gl.bindTexture(gl.TEXTURE_2D, cubeFrameBufferTexture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gl.canvas);
 }
 
 function handleTextureLoaded(image, texture, textureNum) {
@@ -395,7 +463,8 @@ function handleTextureLoaded(image, texture, textureNum) {
 	else if (textureNum === 1)
 	{
 		gl.activeTexture(gl.TEXTURE1);
-	}
+	}	
+
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -490,6 +559,23 @@ function loadCanvasTextureBuffers()
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(vertexNormalAttributeTexture, 3, gl.FLOAT, false, 0, 0);
 }
+
+function loadCanvasFrameBufferTextureBuffers()
+{
+	// TEXTURE
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesTextureCoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),
+              gl.STATIC_DRAW);
+	gl.vertexAttribPointer(textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+    	new Uint16Array(cubeCanvasFrameBufferTextureVertexIndices), gl.STATIC_DRAW);
+	gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesNormalBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(vertexNormalAttributeTexture, 3, gl.FLOAT, false, 0, 0);
+}
+
 function updatePosition() {
 
 	var currentTime = Date.now();
@@ -537,7 +623,7 @@ function drawScene() {
 
 	// done after translation
 	mvPushMatrix();
-	mvRotate(cubeRotation, [1, -1, 1]);
+	mvRotate(cubeRotation, [0, -1, 0]);
 	if (MOVE_CUBE){	mvTranslate([mXOffset, mYOffset, mZOffset]); }
 
 	gl.useProgram(colorShaderProgram);
@@ -563,8 +649,46 @@ function drawScene() {
 	gl.bindTexture(gl.TEXTURE_2D, cubeCanvasTexture);
 	setMatrixUniforms(textureShaderProgram);
 	loadCanvasTextureBuffers();
-	gl.drawElements(gl.TRIANGLES, cubeCanvasTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
+	// gl.drawElements(gl.TRIANGLES, cubeCanvasTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
+	{ //CANVASFRAMEBUFFER
+		// canvas framebuffer draw to texture?
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture(gl.TEXTURE_2D, cubeFrameBufferTexture);
+
+		function setFramebuffer(fbo, width, height) {
+		    // make this the framebuffer we are rendering to.
+		    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+		 
+		    // Tell the shader the resolution of the framebuffer.
+		    // gl.uniform2f(gl.getUniformLocation(textureShaderProgram, 'uSampler'), width, height);
+			gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 2);
+		 
+		    // Tell webgl the viewport setting needed for framebuffer.
+		    // gl.viewport(0, 0, width, height);
+		}	
+	    setFramebuffer(canvasFrameBuffer, 512, 512);
+		function drawWithKernel(name) {
+		    // set the kernel
+	    	gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), convKernels[name]);
+		    // gl.uniform1fv(kernelLocation, kernels[name]);
+		 
+		    // Draw the rectangle.
+			gl.drawElements(gl.TRIANGLES, cubeCanvasFrameBufferTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
+		    // gl.drawArrays(gl.TRIANGLES, 0, 6);
+	  	}
+	    drawWithKernel(effectsToApply["edgeDetectKernel"]);
+	    // setFramebuffer(null, 512, 512);
+	    // drawWithKernel("normal");
+	    setFramebuffer(null, 512, 512);  // relinquish to drawing to canvas instead of frame buffer
+
+	    // draw to cube face
+		gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 2);
+		gl.bindTexture(gl.TEXTURE_2D, cubeFrameBufferTexture);
+		setMatrixUniforms(textureShaderProgram);
+		loadCanvasFrameBufferTextureBuffers();
+		gl.drawElements(gl.TRIANGLES, cubeCanvasTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
+	}
 	// update canvas texture
 	handleTextureLoaded(gl.canvas, cubeCanvasTexture, 1);
 	// restore original matrix after drawing - AYS who is using this?!?
