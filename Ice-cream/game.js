@@ -11,21 +11,54 @@ var leftPressed;
 var rightPressed;
 var upPressed;
 var ICE_CREAM_CONTAINER = [];
-
+var BASESPEED = 1;
+var exploded =false;
+var UI_PADDING =10;
 function draw()
 {
-        handlePlayerInput();
+        drawPlayer();
+        DrawIceCream();   
+
+}
+
+function drawPlayer()
+{
         ctx.clearRect(0,0, canvas.width,canvas.height);
         ctx.beginPath();
         ctx.arc(x, y, PLAYER_RADIUS, 0, Math.PI*2, false);
         // ctx.fillStyle = "rgba(200,123,1,1)";
         ctx.fillStyle = "#416647";
         ctx.fill();
-        ctx.closePath(); 
-        DrawIceCream();   
+        ctx.closePath();
+}
+
+function update()
+{
+
+        if (!exploded)
+        {
+        handlePlayerInput();
+        scoop(); //this method moves the icecream 
+        exploded = collision();
+         draw();
+        }
+        else
+        {
+        ctx.beginPath();
+        ctx.rect(UI_PADDING, UI_PADDING, canvas.width - UI_PADDING * 2, canvas.height - UI_PADDING * 2);
+        ctx.fillStyle = "rgba(200,200,200,0.3)";
+        ctx.fill();
+        // draw overlay text
+        var ui_string = 'You have been scooped';
+        ctx.font = '20px sans-serif';
+        ctx.textBaseline = 'middle';
+        var text_measurement = ctx.measureText(ui_string);
+        ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2);
+        ctx.closePath();
+        }
 
 }
-setInterval(draw,33); 
+setInterval(update,33); 
 document.addEventListener("keydown", keyDownHandler, false);
 
 function keyDownHandler(e) {
@@ -100,10 +133,11 @@ function AddIceCream()
         var iceCream={};
         iceCream.x = Math.random()*canvas.width;
         iceCream.y= canvas.height-ICE_CREAM_RADIUS;
-        console.log(iceCream.x, iceCream.y);
+        //console.log(iceCream.x, iceCream.y);
         ICE_CREAM_CONTAINER.push(iceCream);
 }
-AddIceCream();
+
+setInterval(AddIceCream,500);
 
 function DrawIceCream()
 {
@@ -117,4 +151,28 @@ function DrawIceCream()
         }
 }
 
+function scoop()
+{
 
+        for(var i=0; i<ICE_CREAM_CONTAINER.length; i++)
+        {
+            (ICE_CREAM_CONTAINER[i].y)-=BASESPEED; 
+        }
+}
+
+function collision()
+{
+    //distance between two center is less than r-icecream+r-me
+    for(var i=0; i<ICE_CREAM_CONTAINER.length; i++)
+
+    {
+        var twoR=ICE_CREAM_RADIUS+PLAYER_RADIUS;
+        var distance=Math.sqrt( Math.pow(x-ICE_CREAM_CONTAINER[i].x, 2)+Math.pow(y-ICE_CREAM_CONTAINER[i].y,2) );
+        console.log(twoR, distance);
+        if(twoR>distance) 
+        {
+            return true;
+        }
+    }
+    return false; 
+}
