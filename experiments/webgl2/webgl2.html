@@ -77,11 +77,24 @@
 		varying highp vec3 vLighting;
 
 		uniform sampler2D uSampler;
+		uniform highp vec2 u_textureSize;
+		uniform highp float u_kernel[9];
+		uniform highp float u_kernelWeight;
 
 		void main(void) {
-			mediump vec4 texelColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
-
-			gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);
+			//calculate normalized values for pixels in texture
+			highp vec2 onePixel = vec2(1.0,1.0) / u_textureSize;
+			highp vec4 texelColor = 
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(-1, -1) ) * u_kernel[0] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(0, -1) ) * u_kernel[1] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(1, -1) ) * u_kernel[2] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(-1, 0) ) * u_kernel[3] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(0, 0) ) * u_kernel[4] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(1, 0) ) * u_kernel[5] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(-1, 1) ) * u_kernel[6] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(0, 1) ) * u_kernel[7] +
+				texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t) + onePixel * vec2(1, 1) ) * u_kernel[8];
+			gl_FragColor = vec4((texelColor.rgb/u_kernelWeight) * vLighting, texelColor.a);
 		}
 	</script>
 	<script src="sylvester.js"></script>

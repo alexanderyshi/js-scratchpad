@@ -17,11 +17,13 @@
 {	
 	var gl; // global gl context var
 	var horizAspect = 1000.0/1000.0; // usually width/height
+	var canvas;
 }
 
 //motion
 {		
 	var cubeRotation = 0.0;
+	var CUBE_ROTATION_VECTOR = [1, 1, 0];
 	var tick = 0;
 	var mXOffset = 0.0;
 	var mYOffset = 0.0;
@@ -208,7 +210,7 @@
 
 function start() {
 	// makes sense to not need this to be global - does it get GC?
-	var canvas = document.getElementById('glCanvas');
+	canvas = document.getElementById('glCanvas');
 
 	// Initialize the GL context
 	gl = initWebGL(canvas);
@@ -497,7 +499,6 @@ function updatePosition() {
 	  	var delta = currentTime - lastCubeUpdateTime;
 	  	
 		cubeRotation += (ROTATION_CONST * delta) / 1000.0;
-		console.log()
 		mXOffset += xIncValue * ((3 * delta) / 1000.0);
 	    mYOffset += yIncValue * ((3 * delta) / 1000.0);
 	    mZOffset += zIncValue * ((3 * delta) / 1000.0);
@@ -537,7 +538,7 @@ function drawScene() {
 
 	// done after translation
 	mvPushMatrix();
-	mvRotate(cubeRotation, [1, -1, 1]);
+	mvRotate(cubeRotation, CUBE_ROTATION_VECTOR);
 	if (MOVE_CUBE){	mvTranslate([mXOffset, mYOffset, mZOffset]); }
 
 	gl.useProgram(colorShaderProgram);
@@ -554,6 +555,7 @@ function drawScene() {
 	// local texture
 	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
 	setMatrixUniforms(textureShaderProgram);
+	setKernelParams(textureShaderProgram, cubeImage);
 	loadTextureBuffers();
 	gl.drawElements(gl.TRIANGLES, cubeTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
@@ -561,7 +563,8 @@ function drawScene() {
 	gl.activeTexture(gl.TEXTURE1);
 	gl.uniform1i(gl.getUniformLocation(textureShaderProgram, 'uSampler'), 1);
 	gl.bindTexture(gl.TEXTURE_2D, cubeCanvasTexture);
-	setMatrixUniforms(textureShaderProgram);
+	// setMatrixUniforms(textureShaderProgram);
+	setKernelParams(textureShaderProgram, cubeCanvasImage);
 	loadCanvasTextureBuffers();
 	gl.drawElements(gl.TRIANGLES, cubeCanvasTextureVertexIndices.length, gl.UNSIGNED_SHORT, 0);
 
@@ -601,8 +604,34 @@ function setMatrixUniforms(shaderProgram) { // uniforms are def'd in shaders, lo
 	normalMatrix = normalMatrix.transpose();
 	var nUniform = gl.getUniformLocation(shaderProgram, 'uNormalMatrix');
 	gl.uniformMatrix4fv(nUniform, false, new Float32Array(normalMatrix.flatten()));
+
 }
 
+function computeKernelWeight(kernel) {
+	var weight = kernel.reduce(function(prev, curr) {
+	   return prev + curr;
+	});
+	return weight <= 0 ? 1 : weight;
+}
+
+function setKernelParams(shaderProgram, image) {
+	// texture size for kernels
+	var textureSizeLocation = gl.getUniformLocation(shaderProgram, "u_textureSize");
+	if (textureSizeLocation)
+	{
+		gl.uniform2f(textureSizeLocation, image.width, image.height);
+	}
+
+	var kernelLocation = gl.getUniformLocation(shaderProgram, "u_kernel[0]");
+	var kernelWeightLocation = gl.getUniformLocation(shaderProgram, "u_kernelWeight");
+	var edgeDetectKernel = [
+		-1, -1, -1,
+		-1,  8, -1,
+		-1, -1, -1 
+	];
+	gl.uniform1fv(kernelLocation, edgeDetectKernel);
+	gl.uniform1f(kernelWeightLocation, computeKernelWeight(edgeDetectKernel));
+}
 var mvMatrixStack = [];
 
 function mvPushMatrix(m) {
