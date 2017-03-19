@@ -1,8 +1,9 @@
 var SHIP_RADIUS = 10;
 var SHOOT_COOLDOWN = 250; // ms
-var BULLETS_PER_SHIP = 5;
+var BULLETS_PER_SHIP = 15;
 var SHIP_CANNON_LENGTH = 10;
 var SHIP_ACCEL_RATE = 2;
+var ROTATION_TICK = 8;
 
 function Ship(id, colour, style) {
 	baseType.call(this);
@@ -35,7 +36,7 @@ function Ship(id, colour, style) {
 		if (cannon_ready === true)
 		{
 			var bulletNum = -1;
-			for (i = 0; i < 5; i++) { 
+			for (i = 0; i < BULLETS_PER_SHIP; i++) { 
 				if (this.bulletContainer[i].active === false)
 				{
 					bulletNum = i;
@@ -83,16 +84,60 @@ Ship.prototype.draw = function() {
 	ctx.arc(this.pos_x, this.pos_y, this.radius, 0, Math.PI*2, false);
 	ctx.fill();
 	ctx.closePath();
+
+	// draw illumination beams
+	var beamColor = "rgba(150,150,50,.2)";
+	var debugColor = "rgba(255,255,255,1)";
+	// brighten beam then darken screen
+	{
+		ctx.beginPath();
+		var angle = this.bearing%360;
+		angle = angle < 0 ? angle+360:angle;
+		var flashLightBase_X = this.pos_x + this.CANNON_LENGTH*Math.cos(degToRad(this.bearing));
+		var flashLightBase_Y =  this.pos_y + this.CANNON_LENGTH*Math.sin(degToRad(this.bearing));
+		var flashLightEnd_X = angle > 270 || angle < 90 ? canvas.width : 0;
+		var flashLightEnd_Y = angle > 180 ? 0 : canvas.height;
+
+		ctx.moveTo(flashLightBase_X, flashLightBase_Y);
+		ctx.lineTo(flashLightEnd_X, flashLightEnd_Y);
+		
+		ctx.strokeStyle = debugColor;
+		ctx.stroke();
+		ctx.closePath();
+	}
+	// debug front arcs
+	{
+		ctx.beginPath();
+		ctx.fillStyle = beamColor;
+		ctx.arc(this.pos_x, this.pos_y, 100, degToRad(this.bearing-30), degToRad(this.bearing+30), false);
+		ctx.fill();
+		ctx.closePath();
+	}
+	//darken other regions
+	{
+
+	// ctx.beginPath();
+	// ctx.fillStyle = beamColor;
+	// ctx.arc(this.pos_x, this.pos_y, 1000, degToRad(this.bearing+30), degToRad(this.bearing+210), false);
+	// ctx.fill();
+	// ctx.closePath();
+
+	// ctx.beginPath();
+	// ctx.fillStyle = beamColor;
+	// ctx.arc(this.pos_x, this.pos_y, 1000, degToRad(this.bearing+150), degToRad(this.bearing-30), false);
+	// ctx.fill();
+	// ctx.closePath();
+	}
 }
 
 // ! this will eventually be part of the overloaded ship method only
 function handleUserInput(ship){
  	// TODO: check and reset flags eventually with preset increments?
 	if (ship.rightPressed) {
-		ship.bearing += 5;
+		ship.bearing += ROTATION_TICK;
 	}
 	if (ship.leftPressed) {
-		ship.bearing -= 5;
+		ship.bearing -= ROTATION_TICK;
 	}
 	if (ship.upPressed) {
 		ship.vel_y += ship.ACCEL_RATE*Math.sin(degToRad(ship.bearing));
