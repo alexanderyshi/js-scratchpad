@@ -1,7 +1,10 @@
 var canvas = document.getElementById("mCanvas");
 var ctx = canvas.getContext("2d");
-var x=canvas.width/2;
-var y=canvas.height/2;  
+var player={};
+player.x=canvas.width/2;
+player.y=canvas.height/2;  
+player.lives=3;
+player.score=0;
 var PLAYER_RADIUS = 5;
 var PLAYER_SPEED =10;
 var ICE_CREAM_RADIUS=5; 
@@ -17,7 +20,9 @@ var UI_PADDING =10;
 function draw()
 {
         drawPlayer();
-        DrawIceCream();   
+        DrawIceCream();  
+        drawLives();
+        drawScore(); 
 
 }
 
@@ -25,7 +30,7 @@ function drawPlayer()
 {
         ctx.clearRect(0,0, canvas.width,canvas.height);
         ctx.beginPath();
-        ctx.arc(x, y, PLAYER_RADIUS, 0, Math.PI*2, false);
+        ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI*2, false);
         // ctx.fillStyle = "rgba(200,123,1,1)";
         ctx.fillStyle = "#416647";
         ctx.fill();
@@ -34,14 +39,24 @@ function drawPlayer()
 
 function update()
 {
-
-        if (!exploded)
+		console.log (ICE_CREAM_CONTAINER.length); 
+        if (player.lives>0)
         {
-        handlePlayerInput();
-        scoop(); //this method moves the icecream 
-        exploded = collision();
-         draw();
+	        handlePlayerInput();
+	        scoop(); //this method moves the icecream 
+	        if(collision())
+	        {
+	        	player.lives--;
+	        	clearIC();
+	        }
+	        draw();
+	        if (Math.random()*100 < 5+player.score/20)
+	        {
+	        	AddIceCream();
+	        }
+
         }
+
         else
         {
         ctx.beginPath();
@@ -94,34 +109,34 @@ document.addEventListener("keyup", keyUpHandler, false);
 function handlePlayerInput(){
         if (leftPressed)
         {
-                x-=PLAYER_SPEED;
-                if(x<PLAYER_RADIUS)
+                player.x-=PLAYER_SPEED;
+                if(player.x<PLAYER_RADIUS)
                 {
-                        x=PLAYER_RADIUS;
+                        player.x=PLAYER_RADIUS;
                 }
         }
         if(rightPressed)
         {
-                x+= PLAYER_SPEED;
-                if(x>canvas.width-PLAYER_RADIUS)
+                player.x+= PLAYER_SPEED;
+                if(player.x>canvas.width-PLAYER_RADIUS)
                 {
-                        x=canvas.width-PLAYER_RADIUS;
+                        player.x=canvas.width-PLAYER_RADIUS;
                 }
         }
          if(upPressed)
         {
-                y-=PLAYER_SPEED;
-                if(y<PLAYER_RADIUS)
+                player.y-=PLAYER_SPEED;
+                if(player.y<PLAYER_RADIUS)
                 {
-                        y=PLAYER_RADIUS;
+                        player.y=PLAYER_RADIUS;
                 }
         }
          if(downPressed)
         {
-                y+= PLAYER_SPEED;
-                if(y>canvas.height-PLAYER_RADIUS-ICE_CREAM_RADIUS-BOTTOM_PADDING)
+                player.y+= PLAYER_SPEED;
+                if(player.y>canvas.height-PLAYER_RADIUS-ICE_CREAM_RADIUS-BOTTOM_PADDING)
                 {
-                        y=canvas.height-PLAYER_RADIUS-ICE_CREAM_RADIUS-BOTTOM_PADDING;
+                        player.y=canvas.height-PLAYER_RADIUS-ICE_CREAM_RADIUS-BOTTOM_PADDING;
 
                 }
         }
@@ -137,7 +152,7 @@ function AddIceCream()
         ICE_CREAM_CONTAINER.push(iceCream);
 }
 
-setInterval(AddIceCream,500);
+//setInterval(AddIceCream,500);
 
 function DrawIceCream()
 {
@@ -156,7 +171,15 @@ function scoop()
 
         for(var i=0; i<ICE_CREAM_CONTAINER.length; i++)
         {
-            (ICE_CREAM_CONTAINER[i].y)-=BASESPEED; 
+            (ICE_CREAM_CONTAINER[i].y)-=BASESPEED+player.score/100; 
+            if (ICE_CREAM_CONTAINER[i].y<0)
+            {
+            	ICE_CREAM_CONTAINER.splice(i,1);
+            	player.score=player.score+10;
+            }
+
+
+
         }
 }
 
@@ -167,8 +190,8 @@ function collision()
 
     {
         var twoR=ICE_CREAM_RADIUS+PLAYER_RADIUS;
-        var distance=Math.sqrt( Math.pow(x-ICE_CREAM_CONTAINER[i].x, 2)+Math.pow(y-ICE_CREAM_CONTAINER[i].y,2) );
-        console.log(twoR, distance);
+        var distance=Math.sqrt( Math.pow(player.x-ICE_CREAM_CONTAINER[i].x, 2)+Math.pow(player.y-ICE_CREAM_CONTAINER[i].y,2) );
+        //console.log(twoR, distance);
         if(twoR>distance) 
         {
             return true;
@@ -176,3 +199,34 @@ function collision()
     }
     return false; 
 }
+
+function clearIC()
+{
+	ICE_CREAM_CONTAINER=[];
+
+}
+
+function drawLives()
+{
+    ctx.beginPath();
+    for(var i=0; i<player.lives;i++)
+    {
+
+    ctx.arc(canvas.width - UI_PADDING - (UI_PADDING+PLAYER_RADIUS)*i, UI_PADDING, PLAYER_RADIUS, 0, Math.PI*2, false);
+    ctx.fillStyle = "rgba(60,120,60,0.3)"; 
+    //ctx.fillStyle = "#41664700";
+    ctx.fill(); // filled multiple times
+	}
+    ctx.closePath();
+}
+
+function drawScore()
+	  {
+        ctx.beginPath();
+        var ui_string = player.score;
+        ctx.font = '12px sans-serif';
+        ctx.textBaseline = 'middle';
+        var text_measurement = ctx.measureText(ui_string);
+        ctx.strokeText(ui_string, canvas.width-UI_PADDING - text_measurement.width/2, canvas.height-UI_PADDING);
+        ctx.closePath();
+        }
