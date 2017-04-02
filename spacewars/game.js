@@ -9,6 +9,7 @@ var pause_overlay_colour = "rgba(200,200,200,0.3)";
 // game variables
 var BLACK_HOLE_ENABLED = true;
 var WINNING_POINTS = 5;
+var NUM_ASTEROIDS = 8;
 
 // event listeners and flags
 document.addEventListener("keydown", keyDownHandler, false);
@@ -22,7 +23,12 @@ ships[0].randomizePosition();
 ships[1].randomizePosition();
 if (BLACK_HOLE_ENABLED === true)
 {
-   var blackHole = new BlackHole(2, "rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, true); 
+    var blackHole = new BlackHole(2, "rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE); 
+}
+var asteroids = [];
+for (var i = 0; i < NUM_ASTEROIDS;++i)
+{
+    asteroids[i] = new Asteroid(i+3, "rgba(220,220,220,1)", 0, 0, 0, TYPE_INACTIVE); 
 }
 
 function keyDownHandler(e) {
@@ -119,6 +125,10 @@ function drawAll() {
     {
         blackHole.draw();
     }
+    for (i=0; i< asteroids.length; i++)
+    {
+        asteroids[i].draw();
+    }
 } 
 
 function detectCollisions() 
@@ -128,51 +138,10 @@ function detectCollisions()
     {
         for (j = i + 1; j < ships.length; j++)
         {
-            // bullet collisions
-            for (k = 0; k < BULLETS_PER_SHIP; k++)
-            {
-                // TODO: this is begging for a helper?
-                // first ship hits first
-                if (ships[i].bulletContainer[k].active === true)
-                {
-                    if (ships[j].detectCollision(ships[i].bulletContainer[k]))
-                    {
-                        // document.getElementById("hud").innerHTML = "Player " + (j+1).toString() + " loses!";
-                        ships[j].randomizePosition();
-                        ships[i].bulletContainer[k].active = false;
-                        ships[i].points++;
-                    }
-                }
-
-                // second ship hits first
-                if (ships[j].bulletContainer[k].active === true)
-                {
-                    if (ships[i].detectCollision(ships[j].bulletContainer[k]))
-                    {
-                        ships[i].randomizePosition();
-                        ships[j].bulletContainer[k].active = false;
-                        ships[j].points++;
-                    }
-                }
-            }
-            // ship to ship
-            if (ships[i].detectCollision(ships[j]))
-            {
-                ships[i].randomizePosition();
-                ships[j].randomizePosition();
-                ships[i].points--;
-                ships[j].points--;
-            }
-        }
-    }
-    // blackhole
-    if (ships[0].detectCollision(blackHole))
-    {
-        ships[0].randomizePosition();
-    }
-    if (ships[1].detectCollision(blackHole))
-    {
-        ships[1].randomizePosition();
+            ships[i].detectCollision(ships[j]);
+            ships[j].detectCollision(ships[i]);
+        }   
+        ships[i].detectCollision(blackHole);
     }
 }
 
@@ -190,6 +159,10 @@ function calcDeltas()
         ships[0].gravitate(blackHole);
         ships[1].gravitate(blackHole);
         // TODO: gravitation for bullets
+    }
+    for (i = 0; i < asteroids.length; ++i)
+    {
+        asteroids[i].calcDelta();
     }
 }
 
@@ -225,6 +198,37 @@ function victoryHandler()
     ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2 - 140/2);
 }
 
+function generateRandoms()
+{
+    var randEvent = Math.random();
+    var asteroid_prob = 0.02;
+    // generate asteroids
+    if (randEvent < asteroid_prob)
+    {
+        for (var i = 0; i < asteroids.length; ++i)
+        {
+            if (asteroids[i].active == TYPE_INACTIVE)
+            {
+                var newX = 0;
+                var newY = 0;
+                if (randEvent < asteroid_prob/2)
+                {
+                    newX = Math.random()*canvas.width;
+                }
+                else 
+                {
+                    newY = Math.random()*canvas.height;
+                }
+                asteroids[i] = new Asteroid(i+3, "rgba(220,220,220,1)", 0, newX, newY, TYPE_ACTIVE); 
+                // console.log("SPAWN");
+                break;
+            }
+            // if (i == asteroids.length -1)             console.log("SPAWN MISS");
+        }
+    }
+    // console.log("MISS")
+}
+
 function update() {
     drawAll();
     // TODO: move check to detectCollisions to prevent wasteful checks
@@ -241,5 +245,6 @@ function update() {
         calcDeltas();
         detectCollisions();
         calcBearing(ships[0],blackHole);
+        generateRandoms();
     }
 } setInterval(update, 33);

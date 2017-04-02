@@ -7,6 +7,7 @@ function degToRad(angle) {
 }
 
 function calcDistance(obj1, obj2) {
+	if (!obj1 || !obj2) console.log(obj1,obj2);
 	return Math.sqrt(Math.pow(obj1.pos_x - obj2.pos_x,2) 	
 		+ Math.pow(obj1.pos_y - obj2.pos_y,2));
 }

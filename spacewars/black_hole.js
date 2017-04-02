@@ -41,8 +41,8 @@ BlackHole.prototype.calcDelta = function() {
 	{
 		return;
 	}
-	this.pos_x = canvas.width/2;
-	this.pos_y = canvas.height/2;
+	// this.pos_x = canvas.width/2;
+	// this.pos_y = canvas.height/2;
 	return;
 }
 
@@ -51,5 +51,8 @@ BlackHole.prototype.detectCollision = function(obj) {
 	{
 		return;
 	}
-	return baseType.prototype.detectCollision.call(obj);
+	return baseType.prototype.detectCollision.call(this,obj);
 }
+
+BlackHole.prototype.randomizePosition = function()
+{}

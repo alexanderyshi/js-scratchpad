@@ -7,6 +7,9 @@
 
 // TODO: are the (this.active === false) checks reasonable to implement for child class ease of use?
 
+var TYPE_ACTIVE = true;
+var TYPE_INACTIVE = false;
+
 function baseType()
 {
 	this.bearing = 0;
@@ -15,7 +18,7 @@ function baseType()
 	this.vel_x = 0;
 	this.vel_y = 0;
 	this.radius = 1;
-	this.DAMPING_FACTOR = Math.log10(8.5);
+	this.DAMPING_FACTOR = Math.log10(8.5); // setthing this to 1 results in no damping due to multiplicative identity
 	this.persistOnEdge = true;
 	this.active = true;
 }
@@ -59,7 +62,7 @@ baseType.prototype.calcDelta = function() {
 	{
 		if (this.pos_x < 0 || this.pos_x > ctx.canvas.width || this.pos_y > ctx.canvas.height || this.pos_y < 0) 
 		{
-			this.active = false;
+			this.active = TYPE_INACTIVE;
 		}
 	}
 }
@@ -91,4 +94,11 @@ baseType.prototype.gravitate = function(blackHole) {
 	var accel = blackHole.gravitation_constant / Math.pow(distance,2);
 	this.vel_x += Math.cos(bearing) * accel; 
 	this.vel_y += Math.sin(bearing) * accel; 
+}
+
+baseType.prototype.onDestroyed = function()
+{
+	this.randomizePosition();
+	this.points--;
+	console.log(this);
 }

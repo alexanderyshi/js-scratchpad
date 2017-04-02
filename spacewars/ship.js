@@ -28,7 +28,7 @@ function Ship(id, colour, style) {
 	// TODO: make a set of functions for preset Bullet configs?
 	for (i = 0; i < BULLETS_PER_SHIP; i++) 
 	{ 
-		this.bulletContainer[i] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing, false);
+		this.bulletContainer[i] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing, TYPE_INACTIVE);
 	}
 	var cannon_ready = true;
 	this.shoot = function()
@@ -37,7 +37,7 @@ function Ship(id, colour, style) {
 		{
 			var bulletNum = -1;
 			for (i = 0; i < BULLETS_PER_SHIP; i++) { 
-				if (this.bulletContainer[i].active === false)
+				if (this.bulletContainer[i].active === TYPE_INACTIVE)
 				{
 					bulletNum = i;
 					break;
@@ -84,11 +84,11 @@ Ship.prototype.draw = function() {
 	ctx.arc(this.pos_x, this.pos_y, this.radius, 0, Math.PI*2, false);
 	ctx.fill();
 	ctx.closePath();
+	// !! AYS brighten beam then darken screen
 
 	// draw illumination beams
 	var beamColor = "rgba(150,150,50,.2)";
 	var debugColor = "rgba(255,255,255,1)";
-	// brighten beam then darken screen
 	{
 		ctx.beginPath();
 		var angle = this.bearing%360;
@@ -159,5 +159,23 @@ Ship.prototype.calcDelta = function() {
 }
 
 Ship.prototype.detectCollision = function(obj) {
-	return baseType.prototype.detectCollision.call(this, obj);
+	if (!obj) console.log(obj);
+	for (var i = 0; i < BULLETS_PER_SHIP; i++)
+	{
+		if (this.bulletContainer[i].active == true)
+		{
+			if (obj.detectCollision(this.bulletContainer[i]))
+			{
+				this.bulletContainer[i].active = false;
+				this.points++;
+			}
+		}
+	}
+	var shipDestroyed = baseType.prototype.detectCollision.call(this, obj);
+	if (shipDestroyed)
+	{
+		this.onDestroyed();
+		obj.onDestroyed();
+	}
+	return shipDestroyed;
 }

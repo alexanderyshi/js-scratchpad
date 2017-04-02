@@ -26,7 +26,7 @@ Bullet.prototype = Object.create(baseType.prototype);
 Bullet.prototype.constructor = Bullet;
 
 Bullet.prototype.draw = function() {
-	if (this.active === false)
+	if (this.active === TYPE_INACTIVE)
 	{
 		return;
 	}	
@@ -39,7 +39,7 @@ Bullet.prototype.draw = function() {
 }
 
 Bullet.prototype.calcDelta = function() {
-	if (this.active === false)
+	if (this.active === TYPE_INACTIVE)
 	{
 		return;
 	}
@@ -47,9 +47,9 @@ Bullet.prototype.calcDelta = function() {
 }
 
 Bullet.prototype.detectCollision = function(obj) {
-	if (this.active === false)
+	if (this.active === TYPE_INACTIVE)
 	{
 		return;
 	}
-	return baseType.prototype.detectCollision.call(obj);
+	return baseType.prototype.detectCollision.call(this, obj);
 }
