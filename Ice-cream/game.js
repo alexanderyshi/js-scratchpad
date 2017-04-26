@@ -14,9 +14,15 @@ var leftPressed;
 var rightPressed;
 var upPressed;
 var ICE_CREAM_CONTAINER = [];
-var BASESPEED = 1;
+var BASESPEED = canvas.height/30;
 var exploded =false;
 var UI_PADDING =10;
+
+IC_TYPE = {
+NORMAL : 0,
+BONUS : 1,
+}
+
 function draw()
 {
         ctx.canvas.width=window.innerWidth;
@@ -34,9 +40,15 @@ function drawPlayer()
         ctx.beginPath();
         ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI*2, false);
         // ctx.fillStyle = "rgba(200,123,1,1)";
-        ctx.fillStyle = "#416647";
+        ctx.fillStyle = "#0300a1";
         ctx.fill();
         ctx.closePath();
+}
+
+function DiffSpawn()
+
+{
+    return (Math.random()*100 < 5+player.score/40);
 }
 
 function update()
@@ -51,8 +63,9 @@ function update()
 	        	player.lives--;
 	        	clearIC();
 	        }
+
 	        draw();
-	        if (Math.random()*100 < 5+player.score/20)
+	        if (DiffSpawn()===true)
 	        {
 	        	AddIceCream();
 	        }
@@ -145,13 +158,22 @@ function handlePlayerInput(){
         
 }
 
+function isBonus()
+{
+    return Math.random()< 1/40;
+}
 function AddIceCream()
 {
         var iceCream={};
+        iceCream.type = IC_TYPE.NORMAL; 
         iceCream.x = Math.random()*canvas.width;
         iceCream.y= canvas.height-ICE_CREAM_RADIUS;
         //console.log(iceCream.x, iceCream.y);
         ICE_CREAM_CONTAINER.push(iceCream);
+        if (isBonus())
+        {
+            iceCream.type = IC_TYPE.BONUS;
+        }
 }
 
 //setInterval(AddIceCream,500);
@@ -162,10 +184,25 @@ function DrawIceCream()
         {
                 ctx.beginPath();
                 ctx.arc(ICE_CREAM_CONTAINER[i].x, ICE_CREAM_CONTAINER[i].y, ICE_CREAM_RADIUS, 0, Math.PI*2, false);
-                ctx.fillStyle = "#0300a1";
+                console.log (ICE_CREAM_CONTAINER[i].type);
+                if (ICE_CREAM_CONTAINER[i].type === IC_TYPE.NORMAL)
+
+                {
+                    ctx.fillStyle = "#602011";
+        }
+                else if(ICE_CREAM_CONTAINER[i].type === IC_TYPE.BONUS)
+                {
+                ctx.fillStyle = "#116020";
+                }//#0300a1 blue 
                 ctx.fill();
                 ctx.closePath();
         }
+}
+
+function DiffSpeed()
+
+{
+return player.score/500;
 }
 
 function scoop()
@@ -173,7 +210,7 @@ function scoop()
 
         for(var i=0; i<ICE_CREAM_CONTAINER.length; i++)
         {
-            (ICE_CREAM_CONTAINER[i].y)-=BASESPEED+player.score/100; 
+            (ICE_CREAM_CONTAINER[i].y)-=BASESPEED+DiffSpeed(); 
             if (ICE_CREAM_CONTAINER[i].y<0)
             {
             	ICE_CREAM_CONTAINER.splice(i,1);
@@ -182,7 +219,7 @@ function scoop()
 
         }
 }
-
+//TO DO: Check for bonus icecream  
 function collision()
 {
     //distance between two center is less than r-icecream+r-me
