@@ -5,9 +5,9 @@ player.x=canvas.width/2;
 player.y=canvas.height/2;  
 player.lives=3;
 player.score=0;
-var PLAYER_RADIUS = 5;
+var PLAYER_RADIUS = canvas.width/40;
 var PLAYER_SPEED =10;
-var ICE_CREAM_RADIUS=5; 
+var ICE_CREAM_RADIUS=canvas.width/20; 
 var BOTTOM_PADDING=10;
 var downPressed;
 var leftPressed;
@@ -19,6 +19,8 @@ var exploded =false;
 var UI_PADDING =10;
 function draw()
 {
+        ctx.canvas.width=window.innerWidth;
+        ctx.canvas.height=window.innerHeight;
         drawPlayer();
         DrawIceCream();  
         drawLives();
@@ -39,7 +41,7 @@ function drawPlayer()
 
 function update()
 {
-		console.log (ICE_CREAM_CONTAINER.length); 
+		// console.log (ICE_CREAM_CONTAINER.length); 
         if (player.lives>0)
         {
 	        handlePlayerInput();
@@ -177,8 +179,6 @@ function scoop()
             	ICE_CREAM_CONTAINER.splice(i,1);
             	player.score=player.score+10;
             }
-
-
 
         }
 }
