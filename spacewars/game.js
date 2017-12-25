@@ -17,19 +17,26 @@ document.addEventListener("keyup", keyUpHandler, false);
 
 // game entities
 var ships = []
-ships[0] = new Ship(0, 'rgba(220,60,60,0.5)', 0);
-ships[1] = new Ship(1, 'rgba(60,60,220,0.5)', 0);
-ships[0].randomizePosition();
-ships[1].randomizePosition();
-if (BLACK_HOLE_ENABLED === true)
-{
-    var blackHole = new BlackHole(2, "rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE); 
-}
 var asteroids = [];
-for (var i = 0; i < NUM_ASTEROIDS;++i)
-{
-    asteroids[i] = new Asteroid(i+3, "rgba(220,220,220,1)", 0, 0, 0, TYPE_INACTIVE); 
+var blackHole;
+
+function gameInit() {
+    ships[0] = new Ship(0, 'rgba(220,60,60,0.5)', 0);
+    ships[1] = new Ship(1, 'rgba(60,60,220,0.5)', 0);
+    ships[0].randomizePosition();
+    ships[1].randomizePosition();
+    if (BLACK_HOLE_ENABLED === true)
+    {
+        blackHole = new BlackHole(2, "rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE); 
+        // TODO: add a late init method that will be called after player passes a "start game" screen
+        //          else, should investigate into why the canvas.width property is not accurate upon init
+    }
+    for (var i = 0; i < NUM_ASTEROIDS;++i)
+    {
+        asteroids[i] = new Asteroid(i+3, "rgba(220,220,220,1)", 0, 0, 0, TYPE_INACTIVE); 
+    }
 }
+gameInit();
 
 function keyDownHandler(e) {
     if(e.keyCode == 39) {
@@ -131,8 +138,7 @@ function drawAll() {
     }
 } 
 
-function detectCollisions() 
-{
+function detectCollisions() {
     var i, j, k;
     for (i = 0; i < ships.length - 1; i++)
     {
@@ -145,8 +151,7 @@ function detectCollisions()
     }
 }
 
-function calcDeltas()
-{
+function calcDeltas() {
     var i;
     for (i = 0; i < ships.length; i++)
     {
@@ -166,8 +171,7 @@ function calcDeltas()
     }
 }
 
-function pauseHandler()
-{
+function pauseHandler() {
     drawAll();
     // draw overlay base layer
     ctx.beginPath();
@@ -182,8 +186,7 @@ function pauseHandler()
     ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2 - 140/2);
 }
 
-function victoryHandler()
-{
+function victoryHandler() {
     drawAll();
     // draw overlay base layer
     ctx.beginPath();
@@ -198,8 +201,7 @@ function victoryHandler()
     ctx.strokeText(ui_string, canvas.width/2 - text_measurement.width/2, canvas.height/2 - 140/2);
 }
 
-function generateRandoms()
-{
+function generateRandoms() {
     var randEvent = Math.random();
     var asteroid_prob = 0.02;
     // generate asteroids
@@ -226,12 +228,10 @@ function generateRandoms()
             // if (i == asteroids.length -1)             console.log("SPAWN MISS");
         }
     }
-    // console.log("MISS")
 }
 
 function update() {
     drawAll();
-    // TODO: move check to detectCollisions to prevent wasteful checks
     if (ships[0].points >= WINNING_POINTS || ships[1].points >= WINNING_POINTS)
     {
         victoryHandler();

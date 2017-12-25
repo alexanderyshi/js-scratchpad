@@ -87,16 +87,27 @@ Ship.prototype.draw = function() {
 	// !! AYS brighten beam then darken screen
 
 	// draw illumination beams
-	var beamColor = "rgba(150,150,50,.2)";
-	var debugColor = "rgba(255,255,255,1)";
+	var beamColor = "rgba(150,150,100,0.5)";
+	var debugColor = "rgba(255,255,255,0.2)";
+	// debug bearing quadrants 
 	{
 		ctx.beginPath();
-		var angle = this.bearing%360;
-		angle = angle < 0 ? angle+360:angle;
-		var flashLightBase_X = this.pos_x + this.CANNON_LENGTH*Math.cos(degToRad(this.bearing));
-		var flashLightBase_Y =  this.pos_y + this.CANNON_LENGTH*Math.sin(degToRad(this.bearing));
-		var flashLightEnd_X = angle > 270 || angle < 90 ? canvas.width : 0;
-		var flashLightEnd_Y = angle > 180 ? 0 : canvas.height;
+		var angle = this.bearing;
+		var bearingCos = Math.cos(degToRad(angle));
+		var bearingSin = Math.sin(degToRad(angle));
+		var bearingTan = Math.tan(degToRad(angle));
+		var flashLightBase_X = this.pos_x + this.CANNON_LENGTH*bearingCos;
+		var flashLightBase_Y = this.pos_y + this.CANNON_LENGTH*bearingSin;
+
+		var flashLightEnd_X;
+		var flashLightEnd_Y;
+		if (angle < 90 && angle > -90) {  // looking right
+			flashLightEnd_X = canvas.width;
+			flashLightEnd_Y = flashLightBase_Y + bearingTan*(canvas.width - this.pos_x);
+		} else { // looking left
+			flashLightEnd_X = 0;
+			flashLightEnd_Y = flashLightBase_Y - bearingTan*(this.pos_x);
+		}
 
 		ctx.moveTo(flashLightBase_X, flashLightBase_Y);
 		ctx.lineTo(flashLightEnd_X, flashLightEnd_Y);
@@ -135,9 +146,15 @@ function handleUserInput(ship){
  	// TODO: check and reset flags eventually with preset increments?
 	if (ship.rightPressed) {
 		ship.bearing += ROTATION_TICK;
+		if (ship.bearing > 180) {
+			ship.bearing -= 360;
+		}
 	}
 	if (ship.leftPressed) {
 		ship.bearing -= ROTATION_TICK;
+		if (ship.bearing < -180) {
+			ship.bearing += 360;
+		}
 	}
 	if (ship.upPressed) {
 		ship.vel_y += ship.ACCEL_RATE*Math.sin(degToRad(ship.bearing));
