@@ -21,19 +21,19 @@ var asteroids = [];
 var blackHole;
 
 function gameInit() {
-    ships[0] = new Ship(0, 'rgba(220,60,60,0.5)', 0);
-    ships[1] = new Ship(1, 'rgba(60,60,220,0.5)', 0);
+    ships[0] = new Ship('rgba(220,60,60,0.5)', 0);
+    ships[1] = new Ship('rgba(60,60,220,0.5)', 0);
     ships[0].randomizePosition();
     ships[1].randomizePosition();
     if (BLACK_HOLE_ENABLED === true)
     {
-        blackHole = new BlackHole(2, "rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE); 
+        blackHole = new BlackHole("rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE); 
         // TODO: add a late init method that will be called after player passes a "start game" screen
         //          else, should investigate into why the canvas.width property is not accurate upon init
     }
     for (var i = 0; i < NUM_ASTEROIDS;++i)
     {
-        asteroids[i] = new Asteroid(i+3, "rgba(220,220,220,1)", 0, 0, 0, TYPE_INACTIVE); 
+        asteroids[i] = new Asteroid("rgba(220,220,120,1)", 0, 0, 0, TYPE_INACTIVE); 
     }
 }
 gameInit();
@@ -140,13 +140,17 @@ function drawAll() {
 
 function detectCollisions() {
     var i, j, k;
-    for (i = 0; i < ships.length - 1; i++)
+    for (i = 0; i < ships.length; i++)
     {
         for (j = i + 1; j < ships.length; j++)
         {
             ships[i].detectCollision(ships[j]);
-            ships[j].detectCollision(ships[i]);
+            // TODO: decouple the loss of points from destruction of the ship (being shot should not result in the player losing points)
+            // ships[j].detectCollision(ships[i]);
         }   
+        for (j = 0; j < asteroids.length; j++) {
+            ships[i].detectCollision(asteroids[j]);
+        }
         ships[i].detectCollision(blackHole);
     }
 }
@@ -221,11 +225,9 @@ function generateRandoms() {
                 {
                     newY = Math.random()*canvas.height;
                 }
-                asteroids[i] = new Asteroid(i+3, "rgba(220,220,220,1)", 0, newX, newY, TYPE_ACTIVE); 
-                // console.log("SPAWN");
+                asteroids[i].respawn(newX, newY); 
                 break;
             }
-            // if (i == asteroids.length -1)             console.log("SPAWN MISS");
         }
     }
 }
@@ -244,7 +246,6 @@ function update() {
     {
         calcDeltas();
         detectCollisions();
-        calcBearing(ships[0],blackHole);
         generateRandoms();
     }
 } setInterval(update, 33);

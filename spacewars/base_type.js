@@ -10,6 +10,8 @@
 var TYPE_ACTIVE = true;
 var TYPE_INACTIVE = false;
 
+var NEXT_ENTITY_ID = 0;
+
 function baseType()
 {
 	this.bearing = 0;
@@ -101,4 +103,10 @@ baseType.prototype.onDestroyed = function()
 	this.randomizePosition();
 	this.points--;
 	console.log(this);
+}
+
+baseType.prototype.getEntityId = function () {
+	var out = NEXT_ENTITY_ID;
+	NEXT_ENTITY_ID++;
+	return out;
 }

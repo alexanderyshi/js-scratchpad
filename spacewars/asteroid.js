@@ -1,9 +1,10 @@
 var ASTEROID_RADIUS = 10;
 var ASTEROID_MAX_SPEED
 
-function Asteroid(id, colour, style, pos_x, pos_y, active) {
+function Asteroid(colour, style, pos_x, pos_y, active) {
 	baseType.call(this);
-	this.id = id;
+	this.id = this.getEntityId();
+	// console.log("ast" + this.id);
 	this.colour = colour;
 	this.style = style;
 
@@ -50,5 +51,16 @@ Asteroid.prototype.detectCollision = function(obj) {
 	{
 		return;
 	}
-	return baseType.prototype.detectCollision.call(this, obj);
+	var collision = baseType.prototype.detectCollision.call(this, obj);
+	if (collision) {
+		this.onDestroyed();
+		this.active = TYPE_INACTIVE;
+	}
+	return collision;
+}
+
+Asteroid.prototype.respawn = function(pos_x, pos_y) {
+	this.pos_x = pos_x;
+	this.pos_y = pos_y;
+	this.active = TYPE_ACTIVE;
 }

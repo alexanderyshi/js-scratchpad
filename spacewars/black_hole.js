@@ -2,10 +2,10 @@
 var BLACK_HOLE_RADIUS = 3;
 var BLACK_HOLE_STRENGTH = 3000;
 
-function BlackHole(id, colour, style, pos_x, pos_y, active) {
+function BlackHole(colour, style, pos_x, pos_y, active) {
 	baseType.call(this);
-	// BlackHoles get the same id as the shooter to verify ownership
-	this.id = id;
+	this.id = this.getEntityId();
+	// console.log("bh" + this.id);
 	this.colour = colour;
 	this.style = style;
 
@@ -41,6 +41,7 @@ BlackHole.prototype.calcDelta = function() {
 	{
 		return;
 	}
+	// !!AYS use this hack to fix the position of the black hole
 	// this.pos_x = canvas.width/2;
 	// this.pos_y = canvas.height/2;
 	return;

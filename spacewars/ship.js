@@ -5,9 +5,10 @@ var SHIP_CANNON_LENGTH = 10;
 var SHIP_ACCEL_RATE = 2;
 var ROTATION_TICK = 8;
 
-function Ship(id, colour, style) {
+function Ship(colour, style) {
 	baseType.call(this);
-	this.id = id;
+	this.id = this.getEntityId();
+	// console.log("ship" + this.id);
 	this.colour = colour;
 	this.style = style;
 
@@ -28,7 +29,7 @@ function Ship(id, colour, style) {
 	// TODO: make a set of functions for preset Bullet configs?
 	for (i = 0; i < BULLETS_PER_SHIP; i++) 
 	{ 
-		this.bulletContainer[i] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing, TYPE_INACTIVE);
+		this.bulletContainer[i] = new Bullet(this.colour, this.style, this.pos_x, this.pos_y, this.bearing, TYPE_INACTIVE, this.id);
 	}
 	var cannon_ready = true;
 	this.shoot = function()
@@ -47,7 +48,7 @@ function Ship(id, colour, style) {
 			else
 			{
 				cannon_ready = false;
-				this.bulletContainer[bulletNum] = new Bullet(this.id, this.colour, this.style, this.pos_x, this.pos_y, this.bearing, true);
+				this.bulletContainer[bulletNum] = new Bullet(this.colour, this.style, this.pos_x, this.pos_y, this.bearing, TYPE_ACTIVE, this.id);
 				// ! adding paranthesis causes the return value to be scheduled instead of the function call (resulting in immediate call), therefore use anon func
 				setTimeout(
 					function() 
@@ -184,6 +185,8 @@ Ship.prototype.detectCollision = function(obj) {
 			if (obj.detectCollision(this.bulletContainer[i]))
 			{
 				this.bulletContainer[i].active = false;
+				// !! AYS need to detect if shooting a ship, then award points
+				// maybe retrieve the "value" of all destroyed objects and award it to the shooter
 				this.points++;
 			}
 		}
