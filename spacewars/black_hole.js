@@ -2,7 +2,7 @@
 var BLACK_HOLE_RADIUS = 3;
 var BLACK_HOLE_STRENGTH = 3000;
 
-function BlackHole(colour, style, pos_x, pos_y, active) {
+function BlackHole(colour, style, pos_x, pos_y, active, value) {
 	baseType.call(this);
 	this.id = this.getEntityId();
 	// console.log("bh" + this.id);
@@ -15,6 +15,7 @@ function BlackHole(colour, style, pos_x, pos_y, active) {
 	this.pos_y = pos_y;
 	this.radius = BLACK_HOLE_RADIUS;
 	this.gravitation_constant = BLACK_HOLE_STRENGTH;
+	this.value = value;
 }
 
 BlackHole.prototype = Object.create(baseType.prototype);

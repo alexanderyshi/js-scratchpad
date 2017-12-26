@@ -21,19 +21,19 @@ var asteroids = [];
 var blackHole;
 
 function gameInit() {
-    ships[0] = new Ship('rgba(220,60,60,0.5)', 0);
-    ships[1] = new Ship('rgba(60,60,220,0.5)', 0);
+    ships[0] = new Ship('rgba(220,60,60,0.5)', 0, 1);
+    ships[1] = new Ship('rgba(60,60,220,0.5)', 0, 1);
     ships[0].randomizePosition();
     ships[1].randomizePosition();
     if (BLACK_HOLE_ENABLED === true)
     {
-        blackHole = new BlackHole("rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE); 
+        blackHole = new BlackHole("rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE, 10); 
         // TODO: add a late init method that will be called after player passes a "start game" screen
         //          else, should investigate into why the canvas.width property is not accurate upon init
     }
     for (var i = 0; i < NUM_ASTEROIDS;++i)
     {
-        asteroids[i] = new Asteroid("rgba(220,220,120,1)", 0, 0, 0, TYPE_INACTIVE); 
+        asteroids[i] = new Asteroid("rgba(220,220,120,1)", 0, 0, 0, TYPE_INACTIVE, 0); 
     }
 }
 gameInit();

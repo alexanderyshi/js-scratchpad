@@ -5,7 +5,7 @@ var SHIP_CANNON_LENGTH = 10;
 var SHIP_ACCEL_RATE = 2;
 var ROTATION_TICK = 8;
 
-function Ship(colour, style) {
+function Ship(colour, style, value) {
 	baseType.call(this);
 	this.id = this.getEntityId();
 	// console.log("ship" + this.id);
@@ -13,6 +13,7 @@ function Ship(colour, style) {
 	this.style = style;
 
 	this.points = 0;
+	this.value = value;
 
 	this.ACCEL_RATE = SHIP_ACCEL_RATE;
 	this.radius = SHIP_RADIUS;
@@ -187,7 +188,7 @@ Ship.prototype.detectCollision = function(obj) {
 				this.bulletContainer[i].active = false;
 				// !! AYS need to detect if shooting a ship, then award points
 				// maybe retrieve the "value" of all destroyed objects and award it to the shooter
-				this.points++;
+				this.points += obj.value;
 			}
 		}
 	}

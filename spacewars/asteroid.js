@@ -1,7 +1,7 @@
 var ASTEROID_RADIUS = 10;
 var ASTEROID_MAX_SPEED
 
-function Asteroid(colour, style, pos_x, pos_y, active) {
+function Asteroid(colour, style, pos_x, pos_y, active, value) {
 	baseType.call(this);
 	this.id = this.getEntityId();
 	// console.log("ast" + this.id);
@@ -17,6 +17,7 @@ function Asteroid(colour, style, pos_x, pos_y, active) {
 	this.vel_x = 1;
 	this.vel_y = 1;
 	this.DAMPING_FACTOR = 1;
+	this.value = value;
 }
 
 Asteroid.prototype = Object.create(baseType.prototype);

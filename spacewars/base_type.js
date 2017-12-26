@@ -23,6 +23,7 @@ function baseType()
 	this.DAMPING_FACTOR = Math.log10(8.5); // setthing this to 1 results in no damping due to multiplicative identity
 	this.persistOnEdge = true;
 	this.active = true;
+	this.value = 0;
 }
 
 baseType.prototype.draw = function() {
