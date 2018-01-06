@@ -14,6 +14,7 @@ function Ship(colour, style, value) {
 
 	this.ACCEL_RATE = SHIP_ACCEL_RATE;
 	this.radius = SHIP_RADIUS;
+	// this.cannon = new Splitshot(this.id, this.colour, this.style);
 	this.cannon = new Cannon(this.id, this.colour, this.style);
 
 	this.rightPressed = false;
