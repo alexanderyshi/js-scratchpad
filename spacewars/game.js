@@ -27,7 +27,7 @@ function gameInit() {
     ships[1].randomizePosition();
     if (BLACK_HOLE_ENABLED === true)
     {
-        blackHole = new BlackHole("rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE, 10); 
+        blackHole = new BlackHole("rgba(220,220,220,1)", 0, canvas.width/2, canvas.height/2, TYPE_ACTIVE, 0); 
         // TODO: add a late init method that will be called after player passes a "start game" screen
         //          else, should investigate into why the canvas.width property is not accurate upon init
     }
