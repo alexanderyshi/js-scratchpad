@@ -1,7 +1,4 @@
 var SHIP_RADIUS = 10;
-var SHOOT_COOLDOWN = 250; // ms
-var BULLETS_PER_SHIP = 15;
-var SHIP_CANNON_LENGTH = 10;
 var SHIP_ACCEL_RATE = 2;
 var ROTATION_TICK = 8;
 
@@ -17,50 +14,12 @@ function Ship(colour, style, value) {
 
 	this.ACCEL_RATE = SHIP_ACCEL_RATE;
 	this.radius = SHIP_RADIUS;
-	this.CANNON_LENGTH = SHIP_CANNON_LENGTH;
+	this.cannon = new Cannon(this.id, this.colour, this.style);
 
 	this.rightPressed = false;
 	this.upPressed = false;
 	this.leftPressed = false;
 	this.downPressed = false;
-
-	// TODO: preassign a number of bullets and search for a non-active one in the shoot() function
-	// TODO: turn the following into a "gun" type object/var? - can then be applied to other types of ships, enemies
-	this.bulletContainer = [];
-	// TODO: make a set of functions for preset Bullet configs?
-	for (i = 0; i < BULLETS_PER_SHIP; i++) 
-	{ 
-		this.bulletContainer[i] = new Bullet(this.colour, this.style, this.pos_x, this.pos_y, this.bearing, TYPE_INACTIVE, this.id);
-	}
-	var cannon_ready = true;
-	this.shoot = function()
-	{
-		if (cannon_ready === true)
-		{
-			var bulletNum = -1;
-			for (i = 0; i < BULLETS_PER_SHIP; i++) { 
-				if (this.bulletContainer[i].active === TYPE_INACTIVE)
-				{
-					bulletNum = i;
-					break;
-				}
-			}
-			if (bulletNum === -1) {/* no bullets */}
-			else
-			{
-				cannon_ready = false;
-				this.bulletContainer[bulletNum] = new Bullet(this.colour, this.style, this.pos_x, this.pos_y, this.bearing, TYPE_ACTIVE, this.id);
-				// ! adding paranthesis causes the return value to be scheduled instead of the function call (resulting in immediate call), therefore use anon func
-				setTimeout(
-					function() 
-						{	
-							cannon_ready = true;		
-							this.cnt++;
-						}, SHOOT_COOLDOWN);
-			}
-		}
-
-	};
 }
 
 Ship.prototype = Object.create(baseType.prototype);
@@ -68,24 +27,16 @@ Ship.prototype.constructor = Ship;
 
 Ship.prototype.draw = function() {
 	baseType.prototype.draw.call();
-	var i;
-	for (i = 0; i < BULLETS_PER_SHIP; i++) { 
-		this.bulletContainer[i].draw();
-	}
 
 	// draw ship
-	ctx.beginPath();
-	ctx.moveTo(this.pos_x,this.pos_y);
-	ctx.lineTo(this.pos_x + this.CANNON_LENGTH*Math.cos(degToRad(this.bearing)), this.pos_y + this.CANNON_LENGTH*Math.sin(degToRad(this.bearing)));
-	ctx.strokeStyle = "rgba(220,220,220,1)";
-	ctx.stroke();
-	ctx.closePath();
-
 	ctx.beginPath();
 	ctx.fillStyle = this.colour;
 	ctx.arc(this.pos_x, this.pos_y, this.radius, 0, Math.PI*2, false);
 	ctx.fill();
 	ctx.closePath();
+
+	// draw cannon and bullets
+	this.cannon.draw(this.pos_x, this.pos_y, this.bearing);
 
 	// !! AYS simulate beam by darkening rest of screen
 	{
@@ -102,8 +53,8 @@ Ship.prototype.draw = function() {
 		var bearingSin = Math.sin(degToRad(angle));
 		var bearingTanA = Math.tan(degToRad(angleA));
 		var bearingTanB = Math.tan(degToRad(angleB));
-		var flashLightBase_X = this.pos_x + this.CANNON_LENGTH*bearingCos;
-		var flashLightBase_Y = this.pos_y + this.CANNON_LENGTH*bearingSin;
+		var flashLightBase_X = this.pos_x + this.cannon.cannonLength*bearingCos;
+		var flashLightBase_Y = this.pos_y + this.cannon.cannonLength*bearingSin;
 
 		var flashLightEndA_X;
 		var flashLightEndA_Y;
@@ -166,35 +117,20 @@ function handleUserInput(ship){
 		ship.vel_x += ship.ACCEL_RATE*Math.cos(degToRad(ship.bearing));
 	}
 	if(ship.downPressed) {
-		ship.shoot();
+		ship.cannon.shoot(ship.pos_x, ship.pos_y, ship.bearing);
 	}
 }
 
 Ship.prototype.calcDelta = function() {
 	baseType.prototype.calcDelta.call(this);
 	handleUserInput(this);
-	// Object.getPrototypeOf(Ship.prototype).calcDelta(this); // ! this looks it does a call on a new, seperate instance
-	// call on the super
-	for (i = 0; i < BULLETS_PER_SHIP; i++) { 
-		this.bulletContainer[i].calcDelta();
-	}
+	this.cannon.calcDelta();
 }
 
 Ship.prototype.detectCollision = function(obj) {
 	if (!obj) console.log(obj);
-	for (var i = 0; i < BULLETS_PER_SHIP; i++)
-	{
-		if (this.bulletContainer[i].active == true)
-		{
-			if (obj.detectCollision(this.bulletContainer[i]))
-			{
-				this.bulletContainer[i].active = false;
-				// !! AYS need to detect if shooting a ship, then award points
-				// maybe retrieve the "value" of all destroyed objects and award it to the shooter
-				this.points += obj.value;
-			}
-		}
-	}
+	this.cannon.detectCollision(obj);
+	
 	var shipDestroyed = baseType.prototype.detectCollision.call(this, obj);
 	if (shipDestroyed)
 	{
