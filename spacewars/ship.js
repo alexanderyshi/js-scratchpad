@@ -86,61 +86,64 @@ Ship.prototype.draw = function() {
 	ctx.arc(this.pos_x, this.pos_y, this.radius, 0, Math.PI*2, false);
 	ctx.fill();
 	ctx.closePath();
-	// !! AYS brighten beam then darken screen
 
-	// draw illumination beams
-	var beamColor = "rgba(150,150,100,0.5)";
-	var debugColor = "rgba(255,255,255,0.2)";
-	// debug bearing quadrants 
+	// !! AYS simulate beam by darkening rest of screen
 	{
-		ctx.beginPath();
+		var beamColor = "rgba(150,150,100,0.5)";
+		var debugColor = "rgba(255,255,255,0.1)";
+
 		var angle = this.bearing;
+		var BEAMANGLEDEG = 30;
+		// fixing the angle not be necessary for Math lib functionality
+		var angleA = angle + BEAMANGLEDEG/2;
+		var angleB = angle - BEAMANGLEDEG/2;
+
 		var bearingCos = Math.cos(degToRad(angle));
 		var bearingSin = Math.sin(degToRad(angle));
-		var bearingTan = Math.tan(degToRad(angle));
+		var bearingTanA = Math.tan(degToRad(angleA));
+		var bearingTanB = Math.tan(degToRad(angleB));
 		var flashLightBase_X = this.pos_x + this.CANNON_LENGTH*bearingCos;
 		var flashLightBase_Y = this.pos_y + this.CANNON_LENGTH*bearingSin;
 
-		var flashLightEnd_X;
-		var flashLightEnd_Y;
-		if (angle < 90 && angle > -90) {  // looking right
-			flashLightEnd_X = canvas.width;
-			flashLightEnd_Y = flashLightBase_Y + bearingTan*(canvas.width - this.pos_x);
+		var flashLightEndA_X;
+		var flashLightEndA_Y;
+		var flashLightEndB_X;
+		var flashLightEndB_Y;
+		if (angleA < 90 && angleA > -90) {  // looking right
+			flashLightEndA_X = canvas.width;
+			flashLightEndA_Y = flashLightBase_Y + bearingTanA*(canvas.width - this.pos_x);
 		} else { // looking left
-			flashLightEnd_X = 0;
-			flashLightEnd_Y = flashLightBase_Y - bearingTan*(this.pos_x);
+			flashLightEndA_X = 0;
+			flashLightEndA_Y = flashLightBase_Y - bearingTanA*(this.pos_x);
 		}
 
+		if (angleB < 90 && angleB > -90) {  // looking right
+			flashLightEndB_X = canvas.width;
+			flashLightEndB_Y = flashLightBase_Y + bearingTanB*(canvas.width - this.pos_x);
+		} else { // looking left
+			flashLightEndB_X = 0;
+			flashLightEndB_Y = flashLightBase_Y - bearingTanB*(this.pos_x);
+		}
+
+		ctx.beginPath();
+		ctx.fillStyle = debugColor;
 		ctx.moveTo(flashLightBase_X, flashLightBase_Y);
-		ctx.lineTo(flashLightEnd_X, flashLightEnd_Y);
+		ctx.lineTo(flashLightEndA_X, flashLightEndA_Y);
+	    ctx.lineTo(flashLightEndB_X, flashLightEndB_Y);
+	    ctx.fill();
 		
-		ctx.strokeStyle = debugColor;
-		ctx.stroke();
+		// ctx.strokeStyle = debugColor;
+		// ctx.stroke();
 		ctx.closePath();
 	}
 	// debug front arcs
-	{
-		ctx.beginPath();
-		ctx.fillStyle = beamColor;
-		ctx.arc(this.pos_x, this.pos_y, 100, degToRad(this.bearing-30), degToRad(this.bearing+30), false);
-		ctx.fill();
-		ctx.closePath();
-	}
-	//darken other regions
-	{
-
-	// ctx.beginPath();
-	// ctx.fillStyle = beamColor;
-	// ctx.arc(this.pos_x, this.pos_y, 1000, degToRad(this.bearing+30), degToRad(this.bearing+210), false);
-	// ctx.fill();
-	// ctx.closePath();
-
-	// ctx.beginPath();
-	// ctx.fillStyle = beamColor;
-	// ctx.arc(this.pos_x, this.pos_y, 1000, degToRad(this.bearing+150), degToRad(this.bearing-30), false);
-	// ctx.fill();
-	// ctx.closePath();
-	}
+	// {
+	// 	ctx.beginPath();
+	// 	ctx.fillStyle = beamColor;
+	// 	ctx.arc(this.pos_x, this.pos_y, 100, degToRad(this.bearing-30), degToRad(this.bearing+30), false);
+	// 	ctx.fill();
+	// 	ctx.closePath();
+	// }
 }
 
 // ! this will eventually be part of the overloaded ship method only
